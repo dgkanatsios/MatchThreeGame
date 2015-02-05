@@ -70,7 +70,6 @@ public class ShapesArray
         if (shape.Column != 0)
             for (int column = shape.Column - 1; column >= 0; column--)
             {
-                Utilities.DebugRotate(shapes[shape.Row, column]);
                 if (shapes[shape.Row, column].name == go.name)
                 {
                     matches.Add(shapes[shape.Row, column]);
@@ -83,7 +82,6 @@ public class ShapesArray
         if (shape.Column != Constants.Columns - 1)
             for (int column = shape.Column + 1; column < Constants.Columns; column++)
             {
-                Utilities.DebugRotate(shapes[shape.Row, column]);
                 if (shapes[shape.Row, column].name == go.name)
                 {
                     matches.Add(shapes[shape.Row, column]);
@@ -93,7 +91,7 @@ public class ShapesArray
             }
 
         if (matches.Count < 3)
-           matches.Clear();
+            matches.Clear();
 
         return matches.ToArray();
     }
@@ -103,11 +101,11 @@ public class ShapesArray
         List<GameObject> matches = new List<GameObject>();
         matches.Add(go);
         var shape = go.GetComponent<Shape>();
-        //check top
+        //check bottom
         if (shape.Row != 0)
             for (int row = shape.Row - 1; row >= 0; row--)
             {
-                if (shapes[row, shape.Column].name == go.name)
+                if (shapes[row, shape.Column] != null && shapes[row, shape.Column].name == go.name)
                 {
                     matches.Add(shapes[row, shape.Column]);
                 }
@@ -115,11 +113,11 @@ public class ShapesArray
                     break;
             }
 
-        //check bottom
+        //check top
         if (shape.Row != Constants.Rows - 1)
             for (int row = shape.Row + 1; row < Constants.Rows; row++)
             {
-                if (shapes[row, shape.Column].name == go.name)
+                if (shapes[row, shape.Column] != null && shapes[row, shape.Column].name == go.name)
                 {
                     matches.Add(shapes[row, shape.Column]);
                 }
@@ -159,7 +157,7 @@ public class ShapesArray
 
                             shapes[row, column].GetComponent<Shape>().Row = row;
                             shapes[row, column].GetComponent<Shape>().Column = column;
-                            
+
                             GOsMoved.Add(shapes[row, column]);
                             break;
                         }
@@ -169,6 +167,17 @@ public class ShapesArray
         }
 
         return GOsMoved.Distinct();
+    }
+
+    public IEnumerable<Shape> GetEmptyItemsOnColumn(int column)
+    {
+        List<Shape> emptyItems = new List<Shape>();
+        for (int row = 0; row < Constants.Rows; row++)
+        {
+            if (shapes[row, column] == null)
+                emptyItems.Add(new Shape() { Row = row, Column = column });
+        }
+        return emptyItems;
     }
 }
 

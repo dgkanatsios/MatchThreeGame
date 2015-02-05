@@ -14,39 +14,42 @@ public class ShapesManager : MonoBehaviour
     public readonly Vector2 BottomRight = new Vector2(-2.37f, -4.27f);
     public readonly Vector2 CandySize = new Vector2(0.7f, 0.7f);
 
-
-
+    private State state = State.None;
+    private GameObject hitGo = null;
+    public Vector2[] SpawnPositions;
     public GameObject[] Prefabs;
 
     // Use this for initialization
     void Start()
     {
-        InitializeCandy();
+        InitializeCandyAndSpawnPositions();
     }
 
-    public void InitializeCandy()
+    public void InitializeCandyAndSpawnPositions()
     {
         if (shapes != null)
             RemoveAllCandy();
 
         shapes = new ShapesArray();
+        SpawnPositions = new Vector2[Constants.Columns];
+
         for (int row = 0; row < Constants.Rows; row++)
         {
             for (int column = 0; column < Constants.Columns; column++)
             {
 
-                var newCandy = Prefabs[Random.Range(0, Prefabs.Length)];
+                var newCandy = GetNewCandy();
 
                 //check if two previous horizontal are of the same type
                 while (column >= 2 && shapes[row, column - 1].name == newCandy.name && shapes[row, column - 2].name == newCandy.name)
                 {
-                    newCandy = Prefabs[Random.Range(0, Prefabs.Length)];
+                    newCandy = GetNewCandy();
                 }
 
                 //check if two previous vertical are of the same type
                 while (row >= 2 && shapes[row - 1, column].name == newCandy.name && shapes[row - 2, column].name == newCandy.name)
                 {
-                    newCandy = Prefabs[Random.Range(0, Prefabs.Length)];
+                    newCandy = GetNewCandy();
                 }
 
                 GameObject go = Instantiate(newCandy,
@@ -56,8 +59,20 @@ public class ShapesManager : MonoBehaviour
                 go.GetComponent<Shape>().Row = row;
                 go.GetComponent<Shape>().Column = column;
                 shapes[row, column] = go;
+
             }
         }
+
+        for (int column = 0; column < Constants.Columns; column++)
+        {
+            SpawnPositions[column] = BottomRight 
+                + new Vector2(column * CandySize.x, Constants.Rows * CandySize.y);
+        }
+    }
+
+    private GameObject GetNewCandy()
+    {
+        return Prefabs[Random.Range(0, Prefabs.Length)];
     }
 
     private void RemoveAllCandy()
@@ -71,8 +86,7 @@ public class ShapesManager : MonoBehaviour
         }
     }
 
-    private State state = State.None;
-    private GameObject hitGo = null;
+    
     // Update is called once per frame
     void Update()
     {
@@ -85,7 +99,6 @@ public class ShapesManager : MonoBehaviour
                 {
                     hitGo = hit.collider.gameObject;
                     state = State.SelectionStarted;
-                    Utilities.DebugAlpha(hitGo);
                 }
             }
         }
@@ -93,63 +106,90 @@ public class ShapesManager : MonoBehaviour
         {
             if (Input.GetMouseButton(0))
             {
-                StartCoroutine(Check());
+                var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+                if (hit.collider != null && hitGo != hit.collider.gameObject)
+                {
+                    state = State.Animating;
+                    StartCoroutine("FindMatchedAndCollapse", hit);
+                }
             }
         }
     }
 
-    private IEnumerator Check()
+    private IEnumerator FindMatchedAndCollapse(object hit)
     {
-        var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-        if (hit.collider != null && hitGo != hit.collider.gameObject)
+
+        var hitGo2 = ((RaycastHit2D)hit).collider.gameObject;
+        shapes.Swap(hitGo, hitGo2);
+
+        //move the swapped ones
+        hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
+        hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
+        yield return new WaitForSeconds(Constants.AnimationDuration);
+
+        var sameShapes = shapes.GetMatches(hitGo)
+            .Union(shapes.GetMatches(hitGo2)).Distinct();
+
+        if (sameShapes.Count() >= 3)
         {
-            var hitGo2 = hit.collider.gameObject;
-            Utilities.DebugAlpha(hitGo2);
-            Utilities.DebugPositions(hitGo, hitGo2);
-            shapes.Swap(hitGo, hitGo2);
-            Utilities.DebugPositions(hitGo, hitGo2);
-
-            hitGo.transform.positionTo(1, hitGo2.transform.position);
-            hitGo2.transform.positionTo(1, hitGo.transform.position);
-            yield return new WaitForSeconds(1f);
-
-            var sameShapes = shapes.GetMatches(hitGo)
-                .Union(shapes.GetMatches(hitGo2)).Distinct();
-
-            if (sameShapes.Count() >= 3)
+            var columns = sameShapes.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
+            foreach (var item in sameShapes)
             {
-                var columns = sameShapes.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
-                foreach (var item in sameShapes)
-                {
-                    shapes.Remove(item);
-                    Destroy(item);
-                }
-
-                var movedGOs = shapes.Collapse(columns);
-                Reposition(movedGOs);
+                shapes.Remove(item);
+                Destroy(item);
             }
-            else
-            {
-                hitGo.transform.positionTo(1, hitGo2.transform.position);
-                hitGo2.transform.positionTo(1, hitGo.transform.position);
-                yield return new WaitForSeconds(1f);
 
-                shapes.UndoSwap();
+            //the order the 2 methods below get called is of most importance!!!
+            //collapse the ones gone
+            var movedGOs = shapes.Collapse(columns);
+            //create new ones
+            var newCandies = CreateNewCandy(columns);
 
-            }
-            state = State.None;
+            Reposition(newCandies);
+            Reposition(movedGOs);
+            yield return new WaitForSeconds(Constants.AnimationDuration);
+            DebugUtilities.ShowArray(shapes);
+        }
+        else
+        {
+            hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
+            hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
+            yield return new WaitForSeconds(Constants.AnimationDuration);
 
-
-            state = State.Animating;
+            shapes.UndoSwap();
 
         }
+        state = State.None;
+    }
+
+    private GameObject[] CreateNewCandy(IEnumerable<int> columnsWithMissingCandy)
+    {
+        List<GameObject> newCandies = new List<GameObject>();
+        //find how many null values the column has
+        foreach (int column in columnsWithMissingCandy)
+        {
+            var emptyItems = shapes.GetEmptyItemsOnColumn(column);
+            foreach (var item in emptyItems)
+            {
+                var go = GetNewCandy();
+                GameObject newCandy = Instantiate(go, SpawnPositions[column], Quaternion.identity)
+                    as GameObject;
+
+                newCandy.name = go.name;
+                newCandy.GetComponent<Shape>().Column = item.Column;
+                newCandy.GetComponent<Shape>().Row = item.Row;
+                shapes[item.Row, item.Column] = newCandy;
+                newCandies.Add(newCandy);
+            }
+        }
+        return newCandies.ToArray();
     }
 
     private void Reposition(IEnumerable<GameObject> movedGOs)
     {
         foreach (var item in movedGOs)
         {
-            item.transform.positionTo(1f, BottomRight +
+            item.transform.positionTo(Constants.AnimationDuration, BottomRight +
                 new Vector2(item.GetComponent<Shape>().Column * CandySize.x, item.GetComponent<Shape>().Row * CandySize.y));
         }
     }
