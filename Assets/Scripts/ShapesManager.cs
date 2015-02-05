@@ -93,52 +93,57 @@ public class ShapesManager : MonoBehaviour
         {
             if (Input.GetMouseButton(0))
             {
-                var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-                if (hit.collider != null && hitGo != hit.collider.gameObject)
-                {
-                    var hitGo2 = hit.collider.gameObject;
-                    Utilities.DebugAlpha(hitGo2);
-                    Utilities.DebugPositions(hitGo, hitGo2);
-                    shapes.Swap(hitGo, hitGo2);
-                    Utilities.DebugPositions(hitGo, hitGo2);
-
-                    hitGo.transform.positionTo(1, hitGo2.transform.position);
-                    hitGo2.transform.positionTo(1, hitGo.transform.position).setOnCompleteHandler(x1 =>
-                        {
-                            var sameShapes = shapes.GetMatches(hitGo)
-                                .Union(shapes.GetMatches(hitGo2)).Distinct();
-
-                            if (sameShapes.Count() >= 3)
-                            {
-                                var columns = sameShapes.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
-                                foreach (var item in sameShapes)
-                                {
-                                    shapes.Remove(item);
-                                    Destroy(item);
-                                }
-
-                                var movedGOs = shapes.Collapse(columns);
-                                Reposition(movedGOs);
-                            }
-                            else
-                            {
-                                hitGo.transform.positionTo(1, hitGo2.transform.position);
-                                hitGo2.transform.positionTo(1, hitGo.transform.position).setOnCompleteHandler(x3 =>
-                                    {
-                                        shapes.UndoSwap();
-                                    });
-                            }
-                            state = State.None;
-
-                        });
-                    state = State.Animating;
-
-                }
+                StartCoroutine(Check());
             }
         }
     }
 
-    
+    private IEnumerator Check()
+    {
+        var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+        if (hit.collider != null && hitGo != hit.collider.gameObject)
+        {
+            var hitGo2 = hit.collider.gameObject;
+            Utilities.DebugAlpha(hitGo2);
+            Utilities.DebugPositions(hitGo, hitGo2);
+            shapes.Swap(hitGo, hitGo2);
+            Utilities.DebugPositions(hitGo, hitGo2);
+
+            hitGo.transform.positionTo(1, hitGo2.transform.position);
+            hitGo2.transform.positionTo(1, hitGo.transform.position);
+            yield return new WaitForSeconds(1f);
+
+            var sameShapes = shapes.GetMatches(hitGo)
+                .Union(shapes.GetMatches(hitGo2)).Distinct();
+
+            if (sameShapes.Count() >= 3)
+            {
+                var columns = sameShapes.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
+                foreach (var item in sameShapes)
+                {
+                    shapes.Remove(item);
+                    Destroy(item);
+                }
+
+                var movedGOs = shapes.Collapse(columns);
+                Reposition(movedGOs);
+            }
+            else
+            {
+                hitGo.transform.positionTo(1, hitGo2.transform.position);
+                hitGo2.transform.positionTo(1, hitGo.transform.position);
+                yield return new WaitForSeconds(1f);
+
+                shapes.UndoSwap();
+
+            }
+            state = State.None;
+
+
+            state = State.Animating;
+
+        }
+    }
 
     private void Reposition(IEnumerable<GameObject> movedGOs)
     {
