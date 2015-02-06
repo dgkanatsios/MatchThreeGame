@@ -17,7 +17,8 @@ public class ShapesManager : MonoBehaviour
     private State state = State.None;
     private GameObject hitGo = null;
     public Vector2[] SpawnPositions;
-    public GameObject[] Prefabs;
+    public GameObject[] CandyPrefabs;
+    public GameObject[] ExplosionPrefabs;
 
     // Use this for initialization
     void Start()
@@ -70,10 +71,7 @@ public class ShapesManager : MonoBehaviour
         }
     }
 
-    private GameObject GetNewCandy()
-    {
-        return Prefabs[Random.Range(0, Prefabs.Length)];
-    }
+   
 
     private void RemoveAllCandy()
     {
@@ -136,14 +134,14 @@ public class ShapesManager : MonoBehaviour
             foreach (var item in sameShapes)
             {
                 shapes.Remove(item);
-                Destroy(item);
+                DestroyCandy(item);
             }
 
             //the order the 2 methods below get called is of most importance!!!
             //collapse the ones gone
             var movedGOs = shapes.Collapse(columns);
             //create new ones
-            var newCandies = CreateNewCandy(columns);
+            var newCandies = CreateNewCandyInSpecificColumns(columns);
 
             Reposition(newCandies);
             Reposition(movedGOs);
@@ -162,7 +160,9 @@ public class ShapesManager : MonoBehaviour
         state = State.None;
     }
 
-    private GameObject[] CreateNewCandy(IEnumerable<int> columnsWithMissingCandy)
+   
+
+    private GameObject[] CreateNewCandyInSpecificColumns(IEnumerable<int> columnsWithMissingCandy)
     {
         List<GameObject> newCandies = new List<GameObject>();
         //find how many null values the column has
@@ -192,6 +192,24 @@ public class ShapesManager : MonoBehaviour
             item.transform.positionTo(Constants.AnimationDuration, BottomRight +
                 new Vector2(item.GetComponent<Shape>().Column * CandySize.x, item.GetComponent<Shape>().Row * CandySize.y));
         }
+    }
+
+    private  void DestroyCandy(GameObject item)
+    {
+        GameObject explosion = GetNewExplosion();
+        var newExplosion = Instantiate(explosion, item.transform.position, Quaternion.identity) as GameObject;
+        Destroy(newExplosion, Constants.ExplosionDuration);
+        Destroy(item);
+    }
+
+    private GameObject GetNewCandy()
+    {
+        return CandyPrefabs[Random.Range(0, CandyPrefabs.Length)];
+    }
+
+    private GameObject GetNewExplosion()
+    {
+        return ExplosionPrefabs[Random.Range(0, ExplosionPrefabs.Length)];
     }
 
     enum State
