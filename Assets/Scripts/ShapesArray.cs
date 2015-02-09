@@ -70,6 +70,107 @@ public class ShapesArray
     private GameObject backupG2;
 
 
+    /// <summary>
+    /// Will check for potential matches vertically and horizontally
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<GameObject> GetPotentialMatches()
+    {
+        List<GameObject> matches = null;
+        for (int row = 0; row < Constants.Rows; row++)
+        {
+            for (int column = 0; column < Constants.Columns; column++)
+            {
+                //check horizontal
+                if (column <= Constants.Columns - 3)
+                {
+                    if (shapes[row, column].GetComponent<Shape>().
+                        IsSameType(shapes[row, column + 1].GetComponent<Shape>()))
+                    {
+                        if (row >= 1)
+                            if (shapes[row, column].GetComponent<Shape>().
+                            IsSameType(shapes[row - 1, column + 2].GetComponent<Shape>()))
+                                return new List<GameObject>()
+                                {
+                                    shapes[row, column],
+                                    shapes[row, column + 1],
+                                    shapes[row - 1, column + 2]
+                                };
+
+                        if (row <= Constants.Rows - 2)
+                            if (shapes[row, column].GetComponent<Shape>().
+                            IsSameType(shapes[row + 1, column + 2].GetComponent<Shape>()))
+                                return new List<GameObject>()
+                                {
+                                    shapes[row, column],
+                                    shapes[row, column + 1],
+                                    shapes[row + 1, column + 2]
+                                };
+                    }
+                }
+                if (column <= Constants.Columns - 4)
+                {
+                    if (shapes[row, column].GetComponent<Shape>().
+                       IsSameType(shapes[row, column + 1].GetComponent<Shape>()) &&
+                       shapes[row, column].GetComponent<Shape>().
+                       IsSameType(shapes[row, column + 3].GetComponent<Shape>()))
+                    {
+                        return new List<GameObject>()
+                                {
+                                    shapes[row, column],
+                                    shapes[row, column + 1],
+                                    shapes[row, column + 3]
+                                };
+                    }
+                }
+
+                //check vertical
+                if (row <= Constants.Rows - 3)
+                {
+                    if (shapes[row, column].GetComponent<Shape>().
+                        IsSameType(shapes[row + 1, column].GetComponent<Shape>()))
+                    {
+                        if (column >= 1)
+                            if (shapes[row, column].GetComponent<Shape>().
+                            IsSameType(shapes[row + 2, column - 1].GetComponent<Shape>()))
+                                return new List<GameObject>()
+                                {
+                                    shapes[row, column],
+                                    shapes[row, column + 1],
+                                    shapes[row + 2, column -1]
+                                };
+
+                        if (column <= Constants.Columns - 2)
+                            if (shapes[row, column].GetComponent<Shape>().
+                            IsSameType(shapes[row + 2, column + 1].GetComponent<Shape>()))
+                                return new List<GameObject>()
+                                {
+                                    shapes[row, column],
+                                    shapes[row, column + 1],
+                                    shapes[row + 2, column + 1]
+                                };
+                    }
+                }
+                if (row <= Constants.Rows - 4)
+                {
+                    if (shapes[row, column].GetComponent<Shape>().
+                       IsSameType(shapes[row + 1, column].GetComponent<Shape>()) &&
+                       shapes[row, column].GetComponent<Shape>().
+                       IsSameType(shapes[row + 3, column].GetComponent<Shape>()))
+                    {
+                        return new List<GameObject>()
+                                {
+                                    shapes[row, column],
+                                    shapes[row + 1, column],
+                                    shapes[row + 3, column]
+                                };
+                    }
+                }
+            }
+        }
+        return matches;
+    }
+
     public IEnumerable<GameObject> GetMatches(IEnumerable<GameObject> gos)
     {
         List<GameObject> matches = new List<GameObject>();

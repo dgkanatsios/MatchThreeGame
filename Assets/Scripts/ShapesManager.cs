@@ -20,14 +20,21 @@ public class ShapesManager : MonoBehaviour
     public GameObject[] CandyPrefabs;
     public GameObject[] ExplosionPrefabs;
 
+    private IEnumerator CheckPotentialMatchesCoroutine;
+    private IEnumerator AnimatePotentialMatchesCoroutine;
+
+
     // Use this for initialization
     void Start()
     {
-        SetTypesOnPrefabShapes();
+        InitializeTypesOnPrefabShapes();
+
         InitializeCandyAndSpawnPositions();
+
+        StartCheckForPotentialMatches();
     }
 
-    private void SetTypesOnPrefabShapes()
+    private void InitializeTypesOnPrefabShapes()
     {
         foreach (var item in CandyPrefabs)
         {
@@ -112,6 +119,7 @@ public class ShapesManager : MonoBehaviour
                     hitGo = hit.collider.gameObject;
                     state = State.SelectionStarted;
                 }
+                StopCheckForPotentialMatches();
             }
         }
         else if (state == State.SelectionStarted)
@@ -122,13 +130,31 @@ public class ShapesManager : MonoBehaviour
                 if (hit.collider != null && hitGo != hit.collider.gameObject)
                 {
                     state = State.Animating;
-                    StartCoroutine("FindMatchedAndCollapse", hit);
+                    StartCoroutine("FindMatchesAndCollapse", hit);
                 }
             }
         }
     }
 
-    private IEnumerator FindMatchedAndCollapse(object hit)
+    private void StartCheckForPotentialMatches()
+    {
+        StopCheckForPotentialMatches();
+        CheckPotentialMatchesCoroutine = CheckPotentialMatches();
+        StartCoroutine(CheckPotentialMatchesCoroutine);
+    }
+
+    private void StopCheckForPotentialMatches()
+    {
+        if (AnimatePotentialMatchesCoroutine != null)
+            StopCoroutine(AnimatePotentialMatchesCoroutine);
+        if (CheckPotentialMatchesCoroutine != null)
+            StopCoroutine(CheckPotentialMatchesCoroutine);
+        ResetOpacityOnPotentialMatches();
+    }
+
+
+
+    private IEnumerator FindMatchesAndCollapse(object hit)
     {
 
         var hitGo2 = ((RaycastHit2D)hit).collider.gameObject;
@@ -142,7 +168,7 @@ public class ShapesManager : MonoBehaviour
         var sameShapes = shapes.GetMatches(hitGo)
             .Union(shapes.GetMatches(hitGo2)).Distinct();
 
-        //if user's swap did't create at least a 3-match, undo their swap
+        //if user's swap didn't create at least a 3-match, undo their swap
         if (sameShapes.Count() < 3)
         {
             hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
@@ -178,8 +204,9 @@ public class ShapesManager : MonoBehaviour
             sameShapes = shapes.GetMatches(movedGOs).Union(shapes.GetMatches(newCandies));
 
         }
-        
+
         state = State.None;
+        StartCheckForPotentialMatches();
     }
 
 
@@ -247,6 +274,60 @@ public class ShapesManager : MonoBehaviour
     private GameObject GetRandomExplosion()
     {
         return ExplosionPrefabs[Random.Range(0, ExplosionPrefabs.Length)];
+    }
+
+    private void ResetOpacityOnPotentialMatches()
+    {
+        if (potentialMatches != null)
+            foreach (var item in potentialMatches)
+            {
+                if (item == null) break;
+
+                Color c = item.GetComponent<SpriteRenderer>().color;
+                c.a = 1.0f;
+                item.GetComponent<SpriteRenderer>().color = c;
+            }
+    }
+
+    private IEnumerator CheckPotentialMatches()
+    {
+        yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
+        potentialMatches = shapes.GetPotentialMatches();
+        while (true)
+        {
+            if (potentialMatches != null)
+            {
+                AnimatePotentialMatchesCoroutine = AnimatePotentialMatches();
+                StartCoroutine(AnimatePotentialMatchesCoroutine);
+                yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
+            }
+        }
+    }
+
+    IEnumerable<GameObject> potentialMatches;
+
+    private IEnumerator AnimatePotentialMatches()
+    {
+        for (float i = 1f; i >= 0.3f; i -= 0.1f)
+        {
+            foreach (var item in potentialMatches)
+            {
+                Color c = item.GetComponent<SpriteRenderer>().color;
+                c.a = i;
+                item.GetComponent<SpriteRenderer>().color = c;
+            }
+            yield return new WaitForSeconds(Constants.OpacityAnimationFrameDelay);
+        }
+        for (float i = 0.3f; i <= 1f; i += 0.1f)
+        {
+            foreach (var item in potentialMatches)
+            {
+                Color c = item.GetComponent<SpriteRenderer>().color;
+                c.a = i;
+                item.GetComponent<SpriteRenderer>().color = c;
+            }
+            yield return new WaitForSeconds(Constants.OpacityAnimationFrameDelay);
+        }
     }
 
     enum State

@@ -11,5 +11,8 @@ using System.Text;
         public static readonly float AnimationDuration = 0.3f;
 
         public static readonly float ExplosionDuration = 0.3f;
+
+        public static readonly float WaitBeforePotentialMatchesCheck = 2f;
+        public static readonly float OpacityAnimationFrameDelay = 0.05f;
     }
 
