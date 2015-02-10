@@ -25,7 +25,12 @@ public class Shape : MonoBehaviour
         Type = type;
     }
 
-    public bool IsSameType(object otherShape)
+    /// <summary>
+    /// Checks if the current shape is of the same type as the parameter
+    /// </summary>
+    /// <param name="otherShape"></param>
+    /// <returns></returns>
+    public bool IsSameType(Shape otherShape)
     {
         if (otherShape == null || !(otherShape is Shape))
             throw new ArgumentException("otherShape");
@@ -33,6 +38,12 @@ public class Shape : MonoBehaviour
         return string.Compare(this.Type, (otherShape as Shape).Type) == 0;
     }
 
+    /// <summary>
+    /// Constructor alternative
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="row"></param>
+    /// <param name="column"></param>
     public void Assign(string type, int row, int column)
     {
 
@@ -44,6 +55,12 @@ public class Shape : MonoBehaviour
         Type = type;
     }
 
+    /// <summary>
+    /// Swaps properties of the two shapes
+    /// We could do a shallow copy/exchange here, but anyway...
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
     public static void SwapColumnRow(Shape a, Shape b)
     {
         int temp = a.Row;

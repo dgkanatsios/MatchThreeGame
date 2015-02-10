@@ -34,8 +34,12 @@ public class ShapesManager : MonoBehaviour
         StartCheckForPotentialMatches();
     }
 
+    /// <summary>
+    /// Initialize shapes
+    /// </summary>
     private void InitializeTypesOnPrefabShapes()
     {
+        //just assign the name of the prefab
         foreach (var item in CandyPrefabs)
         {
             item.GetComponent<Shape>().Type = item.name;
@@ -83,6 +87,7 @@ public class ShapesManager : MonoBehaviour
             }
         }
 
+        //create the spawn positions for the new shapes (will pop from the 'ceiling')
         for (int column = 0; column < Constants.Columns; column++)
         {
             SpawnPositions[column] = BottomRight
@@ -111,22 +116,28 @@ public class ShapesManager : MonoBehaviour
     {
         if (state == State.None)
         {
+
+            //user has clicked or touched
             if (Input.GetMouseButtonDown(0))
             {
+                //get the hit position
                 var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-                if (hit.collider != null)
+                if (hit.collider != null) //we have a hit!!!
                 {
                     hitGo = hit.collider.gameObject;
                     state = State.SelectionStarted;
                 }
+                //user clicked/touched the screen, no need to show him hints for a shortwhile
                 StopCheckForPotentialMatches();
             }
         }
         else if (state == State.SelectionStarted)
         {
+            //user dragged
             if (Input.GetMouseButton(0))
             {
                 var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+                //we have a hit
                 if (hit.collider != null && hitGo != hit.collider.gameObject)
                 {
                     state = State.Animating;
@@ -136,21 +147,6 @@ public class ShapesManager : MonoBehaviour
         }
     }
 
-    private void StartCheckForPotentialMatches()
-    {
-        StopCheckForPotentialMatches();
-        CheckPotentialMatchesCoroutine = CheckPotentialMatches();
-        StartCoroutine(CheckPotentialMatchesCoroutine);
-    }
-
-    private void StopCheckForPotentialMatches()
-    {
-        if (AnimatePotentialMatchesCoroutine != null)
-            StopCoroutine(AnimatePotentialMatchesCoroutine);
-        if (CheckPotentialMatchesCoroutine != null)
-            StopCoroutine(CheckPotentialMatchesCoroutine);
-        ResetOpacityOnPotentialMatches();
-    }
 
 
 
@@ -276,6 +272,25 @@ public class ShapesManager : MonoBehaviour
         return ExplosionPrefabs[Random.Range(0, ExplosionPrefabs.Length)];
     }
 
+
+    private void StartCheckForPotentialMatches()
+    {
+        StopCheckForPotentialMatches();
+        //get a reference to stop it later
+        CheckPotentialMatchesCoroutine = CheckPotentialMatches();
+        StartCoroutine(CheckPotentialMatchesCoroutine);
+    }
+
+    private void StopCheckForPotentialMatches()
+    {
+        if (AnimatePotentialMatchesCoroutine != null)
+            StopCoroutine(AnimatePotentialMatchesCoroutine);
+        if (CheckPotentialMatchesCoroutine != null)
+            StopCoroutine(CheckPotentialMatchesCoroutine);
+        ResetOpacityOnPotentialMatches();
+    }
+
+
     private void ResetOpacityOnPotentialMatches()
     {
         if (potentialMatches != null)
@@ -289,6 +304,10 @@ public class ShapesManager : MonoBehaviour
             }
     }
 
+    /// <summary>
+    /// Finds potential matches
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator CheckPotentialMatches()
     {
         yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
@@ -297,7 +316,7 @@ public class ShapesManager : MonoBehaviour
         {
             if (potentialMatches != null)
             {
-                AnimatePotentialMatchesCoroutine = AnimatePotentialMatches();
+                AnimatePotentialMatchesCoroutine = Utilities.AnimatePotentialMatches(potentialMatches);
                 StartCoroutine(AnimatePotentialMatchesCoroutine);
                 yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
             }
@@ -306,29 +325,7 @@ public class ShapesManager : MonoBehaviour
 
     IEnumerable<GameObject> potentialMatches;
 
-    private IEnumerator AnimatePotentialMatches()
-    {
-        for (float i = 1f; i >= 0.3f; i -= 0.1f)
-        {
-            foreach (var item in potentialMatches)
-            {
-                Color c = item.GetComponent<SpriteRenderer>().color;
-                c.a = i;
-                item.GetComponent<SpriteRenderer>().color = c;
-            }
-            yield return new WaitForSeconds(Constants.OpacityAnimationFrameDelay);
-        }
-        for (float i = 0.3f; i <= 1f; i += 0.1f)
-        {
-            foreach (var item in potentialMatches)
-            {
-                Color c = item.GetComponent<SpriteRenderer>().color;
-                c.a = i;
-                item.GetComponent<SpriteRenderer>().color = c;
-            }
-            yield return new WaitForSeconds(Constants.OpacityAnimationFrameDelay);
-        }
-    }
+   
 
     enum State
     {

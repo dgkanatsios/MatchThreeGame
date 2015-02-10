@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-
+/// <summary>
+/// Custom class to accomodate useful stuff for our shapes array
+/// </summary>
 public class ShapesArray
 {
 
@@ -35,22 +37,25 @@ public class ShapesArray
     /// <param name="g2"></param>
     public void Swap(GameObject g1, GameObject g2)
     {
-
+        //hold a backup in case no match is produced
         backupG1 = g1;
         backupG2 = g2;
 
         var g1Shape = g1.GetComponent<Shape>();
         var g2Shape = g2.GetComponent<Shape>();
 
+        //backup array indexes
         int g1Row = g1Shape.Row;
         int g1Column = g1Shape.Column;
         int g2Row = g2Shape.Row;
         int g2Column = g2Shape.Column;
 
+        //swap them in the array
         var temp = shapes[g1Row, g1Column];
         shapes[g1Row, g1Column] = shapes[g2Row, g2Column];
         shapes[g2Row, g2Column] = temp;
 
+        //swap their respective properties
         Shape.SwapColumnRow(g1Shape, g2Shape);
 
     }
@@ -136,7 +141,7 @@ public class ShapesArray
                                 return new List<GameObject>()
                                 {
                                     shapes[row, column],
-                                    shapes[row, column + 1],
+                                    shapes[row+1, column],
                                     shapes[row + 2, column -1]
                                 };
 
@@ -146,7 +151,7 @@ public class ShapesArray
                                 return new List<GameObject>()
                                 {
                                     shapes[row, column],
-                                    shapes[row, column + 1],
+                                    shapes[row+1, column],
                                     shapes[row + 2, column + 1]
                                 };
                     }
