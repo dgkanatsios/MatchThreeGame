@@ -14,7 +14,7 @@ public class ShapesManager : MonoBehaviour
     public readonly Vector2 BottomRight = new Vector2(-2.37f, -4.27f);
     public readonly Vector2 CandySize = new Vector2(0.7f, 0.7f);
 
-    private State state = State.None;
+    private GameState state = GameState.None;
     private GameObject hitGo = null;
     public Vector2[] SpawnPositions;
     public GameObject[] CandyPrefabs;
@@ -23,6 +23,7 @@ public class ShapesManager : MonoBehaviour
     private IEnumerator CheckPotentialMatchesCoroutine;
     private IEnumerator AnimatePotentialMatchesCoroutine;
 
+    IEnumerable<GameObject> potentialMatches;
 
     // Use this for initialization
     void Start()
@@ -79,9 +80,8 @@ public class ShapesManager : MonoBehaviour
                     BottomRight + new Vector2(column * CandySize.x, row * CandySize.y), Quaternion.identity)
                     as GameObject;
 
-
+                //assign the specific properties
                 go.GetComponent<Shape>().Assign(newCandy.GetComponent<Shape>().Type, row, column);
-
                 shapes[row, column] = go;
 
             }
@@ -114,7 +114,7 @@ public class ShapesManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (state == State.None)
+        if (state == GameState.None)
         {
 
             //user has clicked or touched
@@ -125,13 +125,13 @@ public class ShapesManager : MonoBehaviour
                 if (hit.collider != null) //we have a hit!!!
                 {
                     hitGo = hit.collider.gameObject;
-                    state = State.SelectionStarted;
+                    state = GameState.SelectionStarted;
                 }
                 //user clicked/touched the screen, no need to show him hints for a shortwhile
                 StopCheckForPotentialMatches();
             }
         }
-        else if (state == State.SelectionStarted)
+        else if (state == GameState.SelectionStarted)
         {
             //user dragged
             if (Input.GetMouseButton(0))
@@ -140,8 +140,8 @@ public class ShapesManager : MonoBehaviour
                 //we have a hit
                 if (hit.collider != null && hitGo != hit.collider.gameObject)
                 {
-                    state = State.Animating;
-                    StartCoroutine("FindMatchesAndCollapse", hit);
+                    state = GameState.Animating;
+                    StartCoroutine(FindMatchesAndCollapse(hit));
                 }
             }
         }
@@ -150,10 +150,10 @@ public class ShapesManager : MonoBehaviour
 
 
 
-    private IEnumerator FindMatchesAndCollapse(object hit)
+    private IEnumerator FindMatchesAndCollapse(RaycastHit2D hit2)
     {
-
-        var hitGo2 = ((RaycastHit2D)hit).collider.gameObject;
+        //get the second item that was part of the swipe
+        var hitGo2 = hit2.collider.gameObject;
         shapes.Swap(hitGo, hitGo2);
 
         //move the swapped ones
@@ -161,11 +161,12 @@ public class ShapesManager : MonoBehaviour
         hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
         yield return new WaitForSeconds(Constants.AnimationDuration);
 
+        //get the matches via the helper methods
         var sameShapes = shapes.GetMatches(hitGo)
             .Union(shapes.GetMatches(hitGo2)).Distinct();
 
         //if user's swap didn't create at least a 3-match, undo their swap
-        if (sameShapes.Count() < 3)
+        if (sameShapes.Count() < Constants.MinimumMatches)
         {
             hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
             hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
@@ -174,14 +175,14 @@ public class ShapesManager : MonoBehaviour
             shapes.UndoSwap();
         }
 
-        while (sameShapes.Count() >= 3)
+        while (sameShapes.Count() >= Constants.MinimumMatches)
         {
 
             var columns = sameShapes.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
             foreach (var item in sameShapes)
             {
                 shapes.Remove(item);
-                DestroyCandy(item);
+                RemoveFromScene(item);
             }
 
             //the order the 2 methods below get called is of most importance!!!
@@ -201,12 +202,16 @@ public class ShapesManager : MonoBehaviour
 
         }
 
-        state = State.None;
+        state = GameState.None;
         StartCheckForPotentialMatches();
     }
 
 
-
+    /// <summary>
+    /// Spawns new candy in columns that have missing ones
+    /// </summary>
+    /// <param name="columnsWithMissingCandy"></param>
+    /// <returns>Info about new candies created</returns>
     private GameObject[] CreateNewCandyInSpecificColumns(IEnumerable<int> columnsWithMissingCandy)
     {
         List<GameObject> newCandies = new List<GameObject>();
@@ -232,10 +237,10 @@ public class ShapesManager : MonoBehaviour
     /// <summary>
     /// Animates gameobjects to their new position
     /// </summary>
-    /// <param name="movedGOs"></param>
-    private void MoveAndAnimate(IEnumerable<GameObject> movedGOs)
+    /// <param name="movedGameObjects"></param>
+    private void MoveAndAnimate(IEnumerable<GameObject> movedGameObjects)
     {
-        foreach (var item in movedGOs)
+        foreach (var item in movedGameObjects)
         {
             item.transform.positionTo(Constants.AnimationDuration, BottomRight +
                 new Vector2(item.GetComponent<Shape>().Column * CandySize.x, item.GetComponent<Shape>().Row * CandySize.y));
@@ -243,10 +248,10 @@ public class ShapesManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Destroys the candy and instantiates a new explosion gameobject
+    /// Destroys the item from the scene and instantiates a new explosion gameobject
     /// </summary>
     /// <param name="item"></param>
-    private void DestroyCandy(GameObject item)
+    private void RemoveFromScene(GameObject item)
     {
         GameObject explosion = GetRandomExplosion();
         var newExplosion = Instantiate(explosion, item.transform.position, Quaternion.identity) as GameObject;
@@ -323,14 +328,9 @@ public class ShapesManager : MonoBehaviour
         }
     }
 
-    IEnumerable<GameObject> potentialMatches;
+
 
    
 
-    enum State
-    {
-        None,
-        SelectionStarted,
-        Animating
-    }
+    
 }

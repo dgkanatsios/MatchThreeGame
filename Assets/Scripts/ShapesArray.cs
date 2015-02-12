@@ -176,6 +176,11 @@ public class ShapesArray
         return matches;
     }
 
+    /// <summary>
+    /// Returns the matches found for a list of GameObjects
+    /// </summary>
+    /// <param name="gos"></param>
+    /// <returns></returns>
     public IEnumerable<GameObject> GetMatches(IEnumerable<GameObject> gos)
     {
         List<GameObject> matches = new List<GameObject>();
@@ -186,11 +191,21 @@ public class ShapesArray
         return matches.Distinct();
     }
 
+    /// <summary>
+    /// Returns the matches found for a single GameObject
+    /// </summary>
+    /// <param name="go"></param>
+    /// <returns></returns>
     public IEnumerable<GameObject> GetMatches(GameObject go)
     {
         return GetMatchesHorizontally(go).Union(GetMatchesVertically(go)).Distinct();
     }
 
+    /// <summary>
+    /// Searches horizontally for matches
+    /// </summary>
+    /// <param name="go"></param>
+    /// <returns></returns>
     private IEnumerable<GameObject> GetMatchesHorizontally(GameObject go)
     {
         List<GameObject> matches = new List<GameObject>();
@@ -221,12 +236,17 @@ public class ShapesArray
             }
 
         //we want more than three matches
-        if (matches.Count < 3)
+        if (matches.Count < Constants.MinimumMatches)
             matches.Clear();
 
         return matches;
     }
 
+    /// <summary>
+    /// Searches vertically for matches
+    /// </summary>
+    /// <param name="go"></param>
+    /// <returns></returns>
     private IEnumerable<GameObject> GetMatchesVertically(GameObject go)
     {
         List<GameObject> matches = new List<GameObject>();
@@ -257,18 +277,27 @@ public class ShapesArray
             }
 
 
-        if (matches.Count < 3)
+        if (matches.Count < Constants.MinimumMatches)
             matches.Clear();
 
         return matches;
     }
 
+    /// <summary>
+    /// Removes (sets as null) an item from the array
+    /// </summary>
+    /// <param name="item"></param>
     public void Remove(GameObject item)
     {
         shapes[item.GetComponent<Shape>().Row, item.GetComponent<Shape>().Column] =
             null;
     }
 
+    /// <summary>
+    /// Collapses the array on the specific columns, after checking for empty items on them
+    /// </summary>
+    /// <param name="columns"></param>
+    /// <returns>Info about the GameObjects that were moved</returns>
     public IEnumerable<GameObject> Collapse(IEnumerable<int> columns)
     {
         List<GameObject> GOsMoved = new List<GameObject>();
@@ -305,6 +334,11 @@ public class ShapesArray
         return GOsMoved.Distinct();
     }
 
+    /// <summary>
+    /// Searches the specific column and returns info about null items
+    /// </summary>
+    /// <param name="column"></param>
+    /// <returns></returns>
     public IEnumerable<Shape> GetEmptyItemsOnColumn(int column)
     {
         List<Shape> emptyItems = new List<Shape>();

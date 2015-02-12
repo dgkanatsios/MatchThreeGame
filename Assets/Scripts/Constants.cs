@@ -14,5 +14,14 @@ using System.Text;
 
         public static readonly float WaitBeforePotentialMatchesCheck = 2f;
         public static readonly float OpacityAnimationFrameDelay = 0.05f;
+
+        public static readonly int MinimumMatches = 3;
+    }
+
+    public enum GameState
+    {
+        None,
+        SelectionStarted,
+        Animating
     }
 
