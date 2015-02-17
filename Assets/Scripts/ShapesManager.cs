@@ -19,6 +19,8 @@ public class ShapesManager : MonoBehaviour
     public Vector2[] SpawnPositions;
     public GameObject[] CandyPrefabs;
     public GameObject[] ExplosionPrefabs;
+    public GameObject[] BoosterPrefabs;
+    private Dictionary<string, GameObject> BoosterDictionary;
 
     private IEnumerator CheckPotentialMatchesCoroutine;
     private IEnumerator AnimatePotentialMatchesCoroutine;
@@ -40,11 +42,16 @@ public class ShapesManager : MonoBehaviour
     /// </summary>
     private void InitializeTypesOnPrefabShapes()
     {
+
         //just assign the name of the prefab
         foreach (var item in CandyPrefabs)
         {
             item.GetComponent<Shape>().Type = item.name;
+
         }
+
+
+
     }
 
     public void InitializeCandyAndSpawnPositions()
@@ -140,10 +147,28 @@ public class ShapesManager : MonoBehaviour
                 //we have a hit
                 if (hit.collider != null && hitGo != hit.collider.gameObject)
                 {
+
+                    //if the two shapes are diagonally aligned (different row and column), just return
+                    if (!Utilities.AreVerticalOrHorizontalNeighbors(hitGo.GetComponent<Shape>(),
+                        hit.collider.gameObject.GetComponent<Shape>()))
+                        return;
+
                     state = GameState.Animating;
+                    FixSortingLayer(hitGo, hit.collider.gameObject);
                     StartCoroutine(FindMatchesAndCollapse(hit));
                 }
             }
+        }
+    }
+
+    private void FixSortingLayer(GameObject hitGo, GameObject hitGo2)
+    {
+        SpriteRenderer sp1 = hitGo.GetComponent<SpriteRenderer>();
+        SpriteRenderer sp2 = hitGo2.GetComponent<SpriteRenderer>();
+        if (sp1.sortingOrder <= sp2.sortingOrder)
+        {
+            sp1.sortingOrder = 1;
+            sp2.sortingOrder = 0;
         }
     }
 
@@ -162,11 +187,13 @@ public class ShapesManager : MonoBehaviour
         yield return new WaitForSeconds(Constants.AnimationDuration);
 
         //get the matches via the helper methods
-        var sameShapes = shapes.GetMatches(hitGo)
-            .Union(shapes.GetMatches(hitGo2)).Distinct();
+        var hitGomatches = shapes.GetMatches(hitGo);
+        var hitGo2matches = shapes.GetMatches(hitGo2);
+
+        var totalMatches = hitGomatches.Union(hitGo2matches).Distinct();
 
         //if user's swap didn't create at least a 3-match, undo their swap
-        if (sameShapes.Count() < Constants.MinimumMatches)
+        if (totalMatches.Count() < Constants.MinimumMatches)
         {
             hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
             hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
@@ -175,30 +202,53 @@ public class ShapesManager : MonoBehaviour
             shapes.UndoSwap();
         }
 
-        while (sameShapes.Count() >= Constants.MinimumMatches)
+        Shape hitGoCache = new Shape();
+        //if more than 3 matches, we will award a booster
+        if (totalMatches.Count() >= Constants.MinimumMatchesForBooster)
+        {
+            //get the moved game object that was of the same type
+            var sameTypeGo = hitGomatches.Count() > 0 ? hitGo : hitGo2;
+            var shape = sameTypeGo.GetComponent<Shape>();
+            //cache it
+            hitGoCache.Assign(shape.Type, shape.Row, shape.Column);
+        }
+
+        while (totalMatches.Count() >= Constants.MinimumMatches)
         {
 
-            var columns = sameShapes.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
-            foreach (var item in sameShapes)
+            foreach (var item in totalMatches)
             {
                 shapes.Remove(item);
                 RemoveFromScene(item);
             }
 
-            //the order the 2 methods below get called is of most importance!!!
-            //collapse the ones gone
-            var movedGOs = shapes.Collapse(columns);
-            //create new ones
-            var newCandies = CreateNewCandyInSpecificColumns(columns);
+            //check and instantiate booster if needed
+            if (!string.IsNullOrEmpty(hitGoCache.Type))
+            {
+                //create a new booster
+                CreateBooster(hitGoCache);
+                hitGoCache.Type = null;
+            }
 
-            MoveAndAnimate(newCandies);
-            MoveAndAnimate(movedGOs);
+            var columns = totalMatches.Select(x2 => x2.GetComponent<Shape>().Column).Distinct();
+
+            //the order the 2 methods below get called is important!!!
+            //collapse the ones gone
+            var collapsedCandyInfo = shapes.Collapse(columns);
+            //create new ones
+            var newCandyInfo = CreateNewCandyInSpecificColumns(columns);
+
+            int maxDistance = Mathf.Max(collapsedCandyInfo.MaxDistance, newCandyInfo.MaxDistance);
+
+            MoveAndAnimate(newCandyInfo.DistinctNewCandy, maxDistance);
+            MoveAndAnimate(collapsedCandyInfo.DistinctCollapsed, maxDistance);
 
             //will wait for both of the above animations
             yield return new WaitForSeconds(Constants.AnimationDuration);
 
             //search if there are matches with the new/collapsed items
-            sameShapes = shapes.GetMatches(movedGOs).Union(shapes.GetMatches(newCandies));
+            totalMatches = shapes.GetMatches(collapsedCandyInfo.DistinctCollapsed).
+                Union(shapes.GetMatches(newCandyInfo.DistinctNewCandy));
 
         }
 
@@ -206,15 +256,32 @@ public class ShapesManager : MonoBehaviour
         StartCheckForPotentialMatches();
     }
 
+    /// <summary>
+    /// Creates a new booster based on the shape parameter
+    /// </summary>
+    /// <param name="hitGoCache"></param>
+    private void CreateBooster(Shape hitGoCache)
+    {
+        GameObject booster = Instantiate(GetBoosterFromType(hitGoCache.Type), BottomRight
+            + new Vector2(hitGoCache.Column * CandySize.x,
+                hitGoCache.Row * CandySize.y), Quaternion.identity)
+            as GameObject;
+        shapes[hitGoCache.Row, hitGoCache.Column] = booster;
+        booster.GetComponent<Shape>().Assign(hitGoCache.Type, hitGoCache.Row, hitGoCache.Column);
+    }
+
+
+
 
     /// <summary>
     /// Spawns new candy in columns that have missing ones
     /// </summary>
     /// <param name="columnsWithMissingCandy"></param>
     /// <returns>Info about new candies created</returns>
-    private GameObject[] CreateNewCandyInSpecificColumns(IEnumerable<int> columnsWithMissingCandy)
+    private NewCandyInfo CreateNewCandyInSpecificColumns(IEnumerable<int> columnsWithMissingCandy)
     {
-        List<GameObject> newCandies = new List<GameObject>();
+        NewCandyInfo newCandyInfo = new NewCandyInfo();
+
         //find how many null values the column has
         foreach (int column in columnsWithMissingCandy)
         {
@@ -227,22 +294,25 @@ public class ShapesManager : MonoBehaviour
 
                 newCandy.GetComponent<Shape>().Assign(go.GetComponent<Shape>().Type, item.Row, item.Column);
 
+                if (Constants.Rows - item.Row > newCandyInfo.MaxDistance)
+                    newCandyInfo.MaxDistance = Constants.Rows - item.Row;
+
                 shapes[item.Row, item.Column] = newCandy;
-                newCandies.Add(newCandy);
+                newCandyInfo.AddGameObject(newCandy);
             }
         }
-        return newCandies.ToArray();
+        return newCandyInfo;
     }
 
     /// <summary>
     /// Animates gameobjects to their new position
     /// </summary>
     /// <param name="movedGameObjects"></param>
-    private void MoveAndAnimate(IEnumerable<GameObject> movedGameObjects)
+    private void MoveAndAnimate(IEnumerable<GameObject> movedGameObjects, int distance)
     {
         foreach (var item in movedGameObjects)
         {
-            item.transform.positionTo(Constants.AnimationDuration, BottomRight +
+            item.transform.positionTo(Constants.MoveAnimationMinDuration * distance, BottomRight +
                 new Vector2(item.GetComponent<Shape>().Column * CandySize.x, item.GetComponent<Shape>().Row * CandySize.y));
         }
     }
@@ -275,6 +345,12 @@ public class ShapesManager : MonoBehaviour
     private GameObject GetRandomExplosion()
     {
         return ExplosionPrefabs[Random.Range(0, ExplosionPrefabs.Length)];
+    }
+
+    private GameObject GetBoosterFromType(string type)
+    {
+        string color = type.Split('_')[1];
+        return BoosterPrefabs.ToList().Where(x => x.name.EndsWith(color)).Single();
     }
 
 
@@ -330,7 +406,7 @@ public class ShapesManager : MonoBehaviour
 
 
 
-   
 
-    
+
+
 }

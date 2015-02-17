@@ -239,7 +239,7 @@ public class ShapesArray
         if (matches.Count < Constants.MinimumMatches)
             matches.Clear();
 
-        return matches;
+        return matches.Distinct();
     }
 
     /// <summary>
@@ -280,7 +280,7 @@ public class ShapesArray
         if (matches.Count < Constants.MinimumMatches)
             matches.Clear();
 
-        return matches;
+        return matches.Distinct();
     }
 
     /// <summary>
@@ -298,9 +298,11 @@ public class ShapesArray
     /// </summary>
     /// <param name="columns"></param>
     /// <returns>Info about the GameObjects that were moved</returns>
-    public IEnumerable<GameObject> Collapse(IEnumerable<int> columns)
+    public CollapseInfo Collapse(IEnumerable<int> columns)
     {
-        List<GameObject> GOsMoved = new List<GameObject>();
+        CollapseInfo collapseInfo = new CollapseInfo();
+
+        
         ///search in every column
         foreach (var column in columns)
         {
@@ -319,11 +321,14 @@ public class ShapesArray
                             shapes[row, column] = shapes[row2, column];
                             shapes[row2, column] = null;
 
+                            //calculate the biggest distance
+                            if (row2 - row > collapseInfo.MaxDistance) collapseInfo.MaxDistance = row2 - row;
+
                             //assign new row and column (name does not change)
                             shapes[row, column].GetComponent<Shape>().Row = row;
                             shapes[row, column].GetComponent<Shape>().Column = column;
 
-                            GOsMoved.Add(shapes[row, column]);
+                            collapseInfo.AddGameObject(shapes[row, column]);
                             break;
                         }
                     }
@@ -331,7 +336,7 @@ public class ShapesArray
             }
         }
 
-        return GOsMoved.Distinct();
+        return collapseInfo;
     }
 
     /// <summary>

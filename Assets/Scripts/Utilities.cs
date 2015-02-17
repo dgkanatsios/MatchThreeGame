@@ -32,6 +32,14 @@ public static class Utilities
         }
     }
 
+    public static bool AreVerticalOrHorizontalNeighbors(Shape s1, Shape s2)
+    {
+        return (s1.Column == s2.Column ||
+                        s1.Row == s2.Row)
+                        && Mathf.Abs(s1.Column - s2.Column) <= 1
+                        && Mathf.Abs(s1.Row - s2.Row) <= 1;
+    }
+
    
 }
 
