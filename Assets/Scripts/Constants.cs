@@ -8,7 +8,7 @@ using System.Text;
     {
         public static readonly int Rows = 12;
         public static readonly int Columns = 8;
-        public static readonly float AnimationDuration = 0.3f;
+        public static readonly float AnimationDuration =  0.2f;
 
         public static readonly float MoveAnimationMinDuration = 0.05f;
 
@@ -21,10 +21,5 @@ using System.Text;
         public static readonly int MinimumMatchesForBooster = 4;
     }
 
-    public enum GameState
-    {
-        None,
-        SelectionStarted,
-        Animating
-    }
+   
 

@@ -178,6 +178,8 @@ public class ShapesArray
 
     /// <summary>
     /// Returns the matches found for a list of GameObjects
+    /// MatchesInfo class is not used as this method is called on subsequent collapses/checks, 
+    /// not the one inflicted by user's drag
     /// </summary>
     /// <param name="gos"></param>
     /// <returns></returns>
@@ -186,7 +188,7 @@ public class ShapesArray
         List<GameObject> matches = new List<GameObject>();
         foreach (var go in gos)
         {
-            matches.AddRange(GetMatches(go));
+            matches.AddRange(GetMatches(go).MatchedCandy);
         }
         return matches.Distinct();
     }
@@ -196,9 +198,65 @@ public class ShapesArray
     /// </summary>
     /// <param name="go"></param>
     /// <returns></returns>
-    public IEnumerable<GameObject> GetMatches(GameObject go)
+    public MatchesInfo GetMatches(GameObject go)
     {
-        return GetMatchesHorizontally(go).Union(GetMatchesVertically(go)).Distinct();
+        MatchesInfo matchesInfo = new MatchesInfo();
+
+        var horizontalMatches = GetMatchesHorizontally(go);
+        if (ContainsDestroyRowColumnBooster(horizontalMatches))
+        {
+            horizontalMatches = GetEntireRow(go);
+            if (!BoosterTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BoostersContained))
+                matchesInfo.BoostersContained |= BoosterType.DestroyWholeRowColumn;
+        }
+        matchesInfo.AddObjectRange(horizontalMatches);
+
+        var verticalMatches = GetMatchesVertically(go);
+        if (ContainsDestroyRowColumnBooster(verticalMatches))
+        {
+            verticalMatches = GetEntireColumn(go);
+            if (!BoosterTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BoostersContained))
+                matchesInfo.BoostersContained |= BoosterType.DestroyWholeRowColumn;
+        }
+        matchesInfo.AddObjectRange(verticalMatches);
+
+        return matchesInfo;
+    }
+
+    private bool ContainsDestroyRowColumnBooster(IEnumerable<GameObject> matches)
+    {
+        if (matches.Count() >= Constants.MinimumMatches)
+        {
+            foreach (var go in matches)
+            {
+                if (BoosterTypeUtilities.ContainsDestroyWholeRowColumn(go.GetComponent<Shape>().Booster))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private IEnumerable<GameObject> GetEntireRow(GameObject go)
+    {
+        List<GameObject> matches = new List<GameObject>();
+        int row = go.GetComponent<Shape>().Row;
+        for (int column = 0; column < Constants.Columns; column++)
+        {
+            matches.Add(shapes[row, column]);
+        }
+        return matches;
+    }
+
+    private IEnumerable<GameObject> GetEntireColumn(GameObject go)
+    {
+        List<GameObject> matches = new List<GameObject>();
+        int column = go.GetComponent<Shape>().Column;
+        for (int row = 0; row < Constants.Rows; row++)
+        {
+            matches.Add(shapes[row, column]);
+        }
+        return matches;
     }
 
     /// <summary>
@@ -289,8 +347,7 @@ public class ShapesArray
     /// <param name="item"></param>
     public void Remove(GameObject item)
     {
-        shapes[item.GetComponent<Shape>().Row, item.GetComponent<Shape>().Column] =
-            null;
+        shapes[item.GetComponent<Shape>().Row, item.GetComponent<Shape>().Column] = null;
     }
 
     /// <summary>
@@ -298,11 +355,11 @@ public class ShapesArray
     /// </summary>
     /// <param name="columns"></param>
     /// <returns>Info about the GameObjects that were moved</returns>
-    public CollapseInfo Collapse(IEnumerable<int> columns)
+    public AlteredCandyInfo Collapse(IEnumerable<int> columns)
     {
-        CollapseInfo collapseInfo = new CollapseInfo();
+        AlteredCandyInfo collapseInfo = new AlteredCandyInfo();
 
-        
+
         ///search in every column
         foreach (var column in columns)
         {
@@ -328,7 +385,7 @@ public class ShapesArray
                             shapes[row, column].GetComponent<Shape>().Row = row;
                             shapes[row, column].GetComponent<Shape>().Column = column;
 
-                            collapseInfo.AddGameObject(shapes[row, column]);
+                            collapseInfo.AddCandy(shapes[row, column]);
                             break;
                         }
                     }

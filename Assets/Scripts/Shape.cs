@@ -6,23 +6,15 @@ using UnityEngine;
 
 public class Shape : MonoBehaviour
 {
+    public BoosterType Booster { get; set; }
     public int Column { get; set; }
     public int Row { get; set; }
 
     public string Type { get; set; }
 
     public Shape()
-    { }
-
-    public Shape(string type, int row, int column)
     {
-
-        if (string.IsNullOrEmpty(type))
-            throw new ArgumentException("type");
-
-        Column = column;
-        Row = row;
-        Type = type;
+        Booster = BoosterType.None;
     }
 
     /// <summary>
@@ -72,4 +64,6 @@ public class Shape : MonoBehaviour
         b.Column = temp;
     }
 }
+
+
 
