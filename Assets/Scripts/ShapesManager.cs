@@ -458,7 +458,12 @@ public class ShapesManager : MonoBehaviour
     private GameObject GetBonusFromType(string type)
     {
         string color = type.Split('_')[1].Trim();
-        return BonusPrefabs.ToList().Where(x => x.name.Contains(color)).Single();
+        foreach (var item in BonusPrefabs)
+        {
+            if (item.GetComponent<Shape>().Type.Contains(color))
+                return item;
+        }
+        throw new System.Exception("Wrong type");
     }
 
     /// <summary>
