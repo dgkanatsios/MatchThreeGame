@@ -7,21 +7,23 @@ using UnityEngine.UI;
 
 public class ShapesManager : MonoBehaviour
 {
-    public Text DebugText;
+    public Text DebugText, ScoreText;
     public bool ShowDebugInfo = false;
     //candy graphics taken from http://opengameart.org/content/candy-pack-1
 
     public ShapesArray shapes;
+
+    private int score;
 
     public readonly Vector2 BottomRight = new Vector2(-2.37f, -4.27f);
     public readonly Vector2 CandySize = new Vector2(0.7f, 0.7f);
 
     private GameState state = GameState.None;
     private GameObject hitGo = null;
-    public Vector2[] SpawnPositions;
+    private Vector2[] SpawnPositions;
     public GameObject[] CandyPrefabs;
     public GameObject[] ExplosionPrefabs;
-    public GameObject[] BoosterPrefabs;
+    public GameObject[] BonusPrefabs;
 
     private IEnumerator CheckPotentialMatchesCoroutine;
     private IEnumerator AnimatePotentialMatchesCoroutine;
@@ -37,7 +39,7 @@ public class ShapesManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        InitializeTypesOnPrefabShapesAndBoosters();
+        InitializeTypesOnPrefabShapesAndBonuses();
 
         InitializeCandyAndSpawnPositions();
 
@@ -47,7 +49,7 @@ public class ShapesManager : MonoBehaviour
     /// <summary>
     /// Initialize shapes
     /// </summary>
-    private void InitializeTypesOnPrefabShapesAndBoosters()
+    private void InitializeTypesOnPrefabShapesAndBonuses()
     {
         //just assign the name of the prefab
         foreach (var item in CandyPrefabs)
@@ -56,8 +58,8 @@ public class ShapesManager : MonoBehaviour
 
         }
 
-        //assign the name of the respective "normal" candy as the type of the booster
-        foreach (var item in BoosterPrefabs)
+        //assign the name of the respective "normal" candy as the type of the Bonus
+        foreach (var item in BonusPrefabs)
         {
             item.GetComponent<Shape>().Type = CandyPrefabs.
                 Where(x => x.GetComponent<Shape>().Type.Contains(item.name.Split('_')[1].Trim())).Single().name;
@@ -66,7 +68,9 @@ public class ShapesManager : MonoBehaviour
 
     public void InitializeCandyAndSpawnPositionsFromPremadeLevel()
     {
-        var premadeLevel = DebugUtilities.FillShapesArray();
+        InitializeVariables();
+
+        var premadeLevel = DebugUtilities.FillShapesArrayFromResourcesData();
 
         if (shapes != null)
             DestroyAllCandy();
@@ -81,7 +85,7 @@ public class ShapesManager : MonoBehaviour
 
                 GameObject newCandy = null;
 
-                newCandy = GetSpecificCandyOrBoosterForPremadeLevel(premadeLevel[row, column]);
+                newCandy = GetSpecificCandyOrBonusForPremadeLevel(premadeLevel[row, column]);
 
                 InstantiateAndPlaceNewCandy(row, column, newCandy);
 
@@ -94,6 +98,7 @@ public class ShapesManager : MonoBehaviour
 
     public void InitializeCandyAndSpawnPositions()
     {
+        InitializeVariables();
 
         if (shapes != null)
             DestroyAllCandy();
@@ -131,6 +136,8 @@ public class ShapesManager : MonoBehaviour
 
         SetupSpawnPositions();
     }
+
+   
 
     private void InstantiateAndPlaceNewCandy(int row, int column, GameObject newCandy)
     {
@@ -263,13 +270,13 @@ public class ShapesManager : MonoBehaviour
             shapes.UndoSwap();
         }
 
-        //if more than 3 matches and no booster is contained in the line, we will award a new booster
-        bool addBooster = totalMatches.Count() >= Constants.MinimumMatchesForBooster &&
-            !BoosterTypeUtilities.ContainsDestroyWholeRowColumn(hitGomatchesInfo.BoostersContained) &&
-            !BoosterTypeUtilities.ContainsDestroyWholeRowColumn(hitGo2matchesInfo.BoostersContained);
+        //if more than 3 matches and no Bonus is contained in the line, we will award a new Bonus
+        bool addBonus = totalMatches.Count() >= Constants.MinimumMatchesForBonus &&
+            !BonusTypeUtilities.ContainsDestroyWholeRowColumn(hitGomatchesInfo.BonussContained) &&
+            !BonusTypeUtilities.ContainsDestroyWholeRowColumn(hitGo2matchesInfo.BonussContained);
 
         Shape hitGoCache = null;
-        if (addBooster)
+        if (addBonus)
         {
             hitGoCache = new Shape();
             //get the moved game object that was of the same type
@@ -278,20 +285,26 @@ public class ShapesManager : MonoBehaviour
             //cache it
             hitGoCache.Assign(shape.Type, shape.Row, shape.Column);
         }
-
+        int timesRun = 1;
         while (totalMatches.Count() >= Constants.MinimumMatches)
         {
+            //increase score
+            IncreaseScore((totalMatches.Count() - 2) * Constants.Match3Score);
+
+            if (timesRun >= 2)
+                IncreaseScore(Constants.SubsequentMatchScore);
+
             foreach (var item in totalMatches)
             {
                 shapes.Remove(item);
                 RemoveFromScene(item);
             }
 
-            //check and instantiate booster if needed
-            if (addBooster)
-                CreateBooster(hitGoCache);
+            //check and instantiate Bonus if needed
+            if (addBonus)
+                CreateBonus(hitGoCache);
 
-            addBooster = false;
+            addBonus = false;
 
             //get the columns that we had a collapse
             var columns = totalMatches.Select(go => go.GetComponent<Shape>().Column).Distinct();
@@ -307,6 +320,8 @@ public class ShapesManager : MonoBehaviour
             MoveAndAnimate(newCandyInfo.AlteredCandy, maxDistance);
             MoveAndAnimate(collapsedCandyInfo.AlteredCandy, maxDistance);
 
+            
+
             //will wait for both of the above animations
             yield return new WaitForSeconds(Constants.MoveAnimationMinDuration * maxDistance);
 
@@ -314,6 +329,9 @@ public class ShapesManager : MonoBehaviour
             totalMatches = shapes.GetMatches(collapsedCandyInfo.AlteredCandy).
                 Union(shapes.GetMatches(newCandyInfo.AlteredCandy)).Distinct();
 
+            
+
+            timesRun++;
         }
 
         state = GameState.None;
@@ -321,21 +339,21 @@ public class ShapesManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates a new booster based on the shape parameter
+    /// Creates a new Bonus based on the shape parameter
     /// </summary>
     /// <param name="hitGoCache"></param>
-    private void CreateBooster(Shape hitGoCache)
+    private void CreateBonus(Shape hitGoCache)
     {
-        GameObject booster = Instantiate(GetBoosterFromType(hitGoCache.Type), BottomRight
+        GameObject Bonus = Instantiate(GetBonusFromType(hitGoCache.Type), BottomRight
             + new Vector2(hitGoCache.Column * CandySize.x,
                 hitGoCache.Row * CandySize.y), Quaternion.identity)
             as GameObject;
-        shapes[hitGoCache.Row, hitGoCache.Column] = booster;
-        var boosterShape = booster.GetComponent<Shape>();
+        shapes[hitGoCache.Row, hitGoCache.Column] = Bonus;
+        var BonusShape = Bonus.GetComponent<Shape>();
         //will have the same type as the "normal" candy
-        boosterShape.Assign(hitGoCache.Type, hitGoCache.Row, hitGoCache.Column);
-        //add the proper booster type
-        boosterShape.Booster |= BoosterType.DestroyWholeRowColumn;
+        BonusShape.Assign(hitGoCache.Type, hitGoCache.Row, hitGoCache.Column);
+        //add the proper Bonus type
+        BonusShape.Bonus |= BonusType.DestroyWholeRowColumn;
     }
 
 
@@ -406,7 +424,22 @@ public class ShapesManager : MonoBehaviour
         return CandyPrefabs[Random.Range(0, CandyPrefabs.Length)];
     }
 
+    private void InitializeVariables()
+    {
+        score = 0;
+        ShowScore();
+    }
 
+    private void IncreaseScore(int amount)
+    {
+        score += amount;
+        ShowScore();
+    }
+
+    private void ShowScore()
+    {
+        ScoreText.text = "Score: " + score.ToString();
+    }
 
     /// <summary>
     /// Get a random explosion
@@ -418,14 +451,14 @@ public class ShapesManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gets the specified booster for the specific type
+    /// Gets the specified Bonus for the specific type
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
-    private GameObject GetBoosterFromType(string type)
+    private GameObject GetBonusFromType(string type)
     {
         string color = type.Split('_')[1].Trim();
-        return BoosterPrefabs.Where(x => x.name.Contains(color)).Single();
+        return BonusPrefabs.ToList().Where(x => x.name.Contains(color)).Single();
     }
 
     /// <summary>
@@ -474,7 +507,7 @@ public class ShapesManager : MonoBehaviour
     private IEnumerator CheckPotentialMatches()
     {
         yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
-        potentialMatches = shapes.GetPotentialMatches();
+        potentialMatches = Utilities.GetPotentialMatches(shapes);
         while (true)
         {
             if (potentialMatches != null)
@@ -487,11 +520,11 @@ public class ShapesManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gets a specific candy or booster based on the premade level information.
+    /// Gets a specific candy or Bonus based on the premade level information.
     /// </summary>
     /// <param name="info"></param>
     /// <returns></returns>
-    private GameObject GetSpecificCandyOrBoosterForPremadeLevel(string info)
+    private GameObject GetSpecificCandyOrBonusForPremadeLevel(string info)
     {
         var tokens = info.Split('_');
 
@@ -506,7 +539,7 @@ public class ShapesManager : MonoBehaviour
         }
         else if (tokens.Count() == 2 && tokens[1].Trim() == "B")
         {
-            foreach (var item in BoosterPrefabs)
+            foreach (var item in BonusPrefabs)
             {
                 if (item.name.Contains(tokens[0].Trim()))
                     return item;

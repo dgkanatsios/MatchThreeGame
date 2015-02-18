@@ -9,7 +9,7 @@ using UnityEngine;
 public static class DebugUtilities
 {
 
-    public static string[,] FillShapesArray()
+    public static string[,] FillShapesArrayFromResourcesData()
     {
         string[,] shapes = new string[Constants.Rows, Constants.Columns];
 
@@ -58,6 +58,11 @@ public static class DebugUtilities
         Debug.Log(GetArrayContents(shapes));
     }
 
+    /// <summary>
+    /// Creates a string with the contents of the shapes array
+    /// </summary>
+    /// <param name="shapes"></param>
+    /// <returns></returns>
     public static string GetArrayContents(ShapesArray shapes)
     {
         string x = string.Empty;
@@ -76,7 +81,7 @@ public static class DebugUtilities
 
                     x += shape.Type.Substring(5, 2);
 
-                    if (BoosterTypeUtilities.ContainsDestroyWholeRowColumn(shape.Booster))
+                    if (BonusTypeUtilities.ContainsDestroyWholeRowColumn(shape.Bonus))
                         x += "B";
                     else
                         x += " ";

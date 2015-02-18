@@ -37,9 +37,9 @@ public class MatchesInfo
     public MatchesInfo()
     {
         matchedCandies = new List<GameObject>();
-        BoostersContained = BoosterType.None;
+        BonussContained = BonusType.None;
     }
 
-    public BoosterType BoostersContained { get; set; }
+    public BonusType BonussContained { get; set; }
 }
 

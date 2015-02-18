@@ -18,7 +18,10 @@ using System.Text;
         public static readonly float OpacityAnimationFrameDelay = 0.05f;
 
         public static readonly int MinimumMatches = 3;
-        public static readonly int MinimumMatchesForBooster = 4;
+        public static readonly int MinimumMatchesForBonus = 4;
+
+        public static readonly int Match3Score = 60;
+        public static readonly int SubsequentMatchScore = 1000;
     }
 
    

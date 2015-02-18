@@ -75,106 +75,7 @@ public class ShapesArray
     private GameObject backupG2;
 
 
-    /// <summary>
-    /// Will check for potential matches vertically and horizontally
-    /// </summary>
-    /// <returns></returns>
-    public IEnumerable<GameObject> GetPotentialMatches()
-    {
-        List<GameObject> matches = null;
-        for (int row = 0; row < Constants.Rows; row++)
-        {
-            for (int column = 0; column < Constants.Columns; column++)
-            {
-                //check horizontal
-                if (column <= Constants.Columns - 3)
-                {
-                    if (shapes[row, column].GetComponent<Shape>().
-                        IsSameType(shapes[row, column + 1].GetComponent<Shape>()))
-                    {
-                        if (row >= 1)
-                            if (shapes[row, column].GetComponent<Shape>().
-                            IsSameType(shapes[row - 1, column + 2].GetComponent<Shape>()))
-                                return new List<GameObject>()
-                                {
-                                    shapes[row, column],
-                                    shapes[row, column + 1],
-                                    shapes[row - 1, column + 2]
-                                };
-
-                        if (row <= Constants.Rows - 2)
-                            if (shapes[row, column].GetComponent<Shape>().
-                            IsSameType(shapes[row + 1, column + 2].GetComponent<Shape>()))
-                                return new List<GameObject>()
-                                {
-                                    shapes[row, column],
-                                    shapes[row, column + 1],
-                                    shapes[row + 1, column + 2]
-                                };
-                    }
-                }
-                if (column <= Constants.Columns - 4)
-                {
-                    if (shapes[row, column].GetComponent<Shape>().
-                       IsSameType(shapes[row, column + 1].GetComponent<Shape>()) &&
-                       shapes[row, column].GetComponent<Shape>().
-                       IsSameType(shapes[row, column + 3].GetComponent<Shape>()))
-                    {
-                        return new List<GameObject>()
-                                {
-                                    shapes[row, column],
-                                    shapes[row, column + 1],
-                                    shapes[row, column + 3]
-                                };
-                    }
-                }
-
-                //check vertical
-                if (row <= Constants.Rows - 3)
-                {
-                    if (shapes[row, column].GetComponent<Shape>().
-                        IsSameType(shapes[row + 1, column].GetComponent<Shape>()))
-                    {
-                        if (column >= 1)
-                            if (shapes[row, column].GetComponent<Shape>().
-                            IsSameType(shapes[row + 2, column - 1].GetComponent<Shape>()))
-                                return new List<GameObject>()
-                                {
-                                    shapes[row, column],
-                                    shapes[row+1, column],
-                                    shapes[row + 2, column -1]
-                                };
-
-                        if (column <= Constants.Columns - 2)
-                            if (shapes[row, column].GetComponent<Shape>().
-                            IsSameType(shapes[row + 2, column + 1].GetComponent<Shape>()))
-                                return new List<GameObject>()
-                                {
-                                    shapes[row, column],
-                                    shapes[row+1, column],
-                                    shapes[row + 2, column + 1]
-                                };
-                    }
-                }
-                if (row <= Constants.Rows - 4)
-                {
-                    if (shapes[row, column].GetComponent<Shape>().
-                       IsSameType(shapes[row + 1, column].GetComponent<Shape>()) &&
-                       shapes[row, column].GetComponent<Shape>().
-                       IsSameType(shapes[row + 3, column].GetComponent<Shape>()))
-                    {
-                        return new List<GameObject>()
-                                {
-                                    shapes[row, column],
-                                    shapes[row + 1, column],
-                                    shapes[row + 3, column]
-                                };
-                    }
-                }
-            }
-        }
-        return matches;
-    }
+   
 
     /// <summary>
     /// Returns the matches found for a list of GameObjects
@@ -203,33 +104,33 @@ public class ShapesArray
         MatchesInfo matchesInfo = new MatchesInfo();
 
         var horizontalMatches = GetMatchesHorizontally(go);
-        if (ContainsDestroyRowColumnBooster(horizontalMatches))
+        if (ContainsDestroyRowColumnBonus(horizontalMatches))
         {
             horizontalMatches = GetEntireRow(go);
-            if (!BoosterTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BoostersContained))
-                matchesInfo.BoostersContained |= BoosterType.DestroyWholeRowColumn;
+            if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonussContained))
+                matchesInfo.BonussContained |= BonusType.DestroyWholeRowColumn;
         }
         matchesInfo.AddObjectRange(horizontalMatches);
 
         var verticalMatches = GetMatchesVertically(go);
-        if (ContainsDestroyRowColumnBooster(verticalMatches))
+        if (ContainsDestroyRowColumnBonus(verticalMatches))
         {
             verticalMatches = GetEntireColumn(go);
-            if (!BoosterTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BoostersContained))
-                matchesInfo.BoostersContained |= BoosterType.DestroyWholeRowColumn;
+            if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonussContained))
+                matchesInfo.BonussContained |= BonusType.DestroyWholeRowColumn;
         }
         matchesInfo.AddObjectRange(verticalMatches);
 
         return matchesInfo;
     }
 
-    private bool ContainsDestroyRowColumnBooster(IEnumerable<GameObject> matches)
+    private bool ContainsDestroyRowColumnBonus(IEnumerable<GameObject> matches)
     {
         if (matches.Count() >= Constants.MinimumMatches)
         {
             foreach (var go in matches)
             {
-                if (BoosterTypeUtilities.ContainsDestroyWholeRowColumn(go.GetComponent<Shape>().Booster))
+                if (BonusTypeUtilities.ContainsDestroyWholeRowColumn(go.GetComponent<Shape>().Bonus))
                     return true;
             }
         }
@@ -314,7 +215,8 @@ public class ShapesArray
         if (shape.Row != 0)
             for (int row = shape.Row - 1; row >= 0; row--)
             {
-                if (shapes[row, shape.Column] != null && shapes[row, shape.Column].GetComponent<Shape>().IsSameType(shape))
+                if (shapes[row, shape.Column] != null &&
+                    shapes[row, shape.Column].GetComponent<Shape>().IsSameType(shape))
                 {
                     matches.Add(shapes[row, shape.Column]);
                 }
@@ -326,7 +228,8 @@ public class ShapesArray
         if (shape.Row != Constants.Rows - 1)
             for (int row = shape.Row + 1; row < Constants.Rows; row++)
             {
-                if (shapes[row, shape.Column] != null && shapes[row, shape.Column].GetComponent<Shape>().IsSameType(shape))
+                if (shapes[row, shape.Column] != null && 
+                    shapes[row, shape.Column].GetComponent<Shape>().IsSameType(shape))
                 {
                     matches.Add(shapes[row, shape.Column]);
                 }

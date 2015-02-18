@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class Shape : MonoBehaviour
 {
-    public BoosterType Booster { get; set; }
+    public BonusType Bonus { get; set; }
     public int Column { get; set; }
     public int Row { get; set; }
 
@@ -14,7 +14,7 @@ public class Shape : MonoBehaviour
 
     public Shape()
     {
-        Booster = BoosterType.None;
+        Bonus = BonusType.None;
     }
 
     /// <summary>

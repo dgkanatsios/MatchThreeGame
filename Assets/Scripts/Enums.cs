@@ -3,22 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+/// <summary>
+/// Bonus types
+/// </summary>
 [Flags]
-public enum BoosterType
+public enum BonusType
 {
     None,
     DestroyWholeRowColumn
 }
 
 
-public static class BoosterTypeUtilities
+public static class BonusTypeUtilities
 {
-    public static bool ContainsDestroyWholeRowColumn(BoosterType bt)
+    /// <summary>
+    /// Helper method to check for specific bonus type
+    /// </summary>
+    /// <param name="bt"></param>
+    /// <returns></returns>
+    public static bool ContainsDestroyWholeRowColumn(BonusType bt)
     {
-        return (bt & BoosterType.DestroyWholeRowColumn) == BoosterType.DestroyWholeRowColumn;
+        return (bt & BonusType.DestroyWholeRowColumn) == BonusType.DestroyWholeRowColumn;
     }
 }
 
+/// <summary>
+/// Our simple game state
+/// </summary>
 public enum GameState
 {
     None,
