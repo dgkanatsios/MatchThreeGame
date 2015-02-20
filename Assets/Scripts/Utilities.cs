@@ -51,7 +51,9 @@ public static class Utilities
     /// <returns></returns>
     public static IEnumerable<GameObject> GetPotentialMatches(ShapesArray shapes)
     {
+        //list that will contain all the matches we find
         List<List<GameObject>> matches = new List<List<GameObject>>();
+       
         for (int row = 0; row < Constants.Rows; row++)
         {
             for (int column = 0; column < Constants.Columns; column++)
@@ -77,7 +79,7 @@ public static class Utilities
 
                 //if we are in the middle of the calculations/loops
                 //and we have less than 3 matches, return a random one
-                if(matches.Count > 0 && matches.Count <=2)
+                if(row >= Constants.Rows / 2 && matches.Count > 0 && matches.Count <=2)
                     return matches[UnityEngine.Random.Range(0, matches.Count - 1)];
             }
         }
