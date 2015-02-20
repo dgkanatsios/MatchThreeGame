@@ -30,7 +30,7 @@ public class ShapesManager : MonoBehaviour
 
     IEnumerable<GameObject> potentialMatches;
 
-
+    public SoundManager soundManager;
     void Awake()
     {
         DebugText.enabled = ShowDebugInfo;
@@ -293,6 +293,8 @@ public class ShapesManager : MonoBehaviour
 
             if (timesRun >= 2)
                 IncreaseScore(Constants.SubsequentMatchScore);
+
+            soundManager.PlayCrincle();
 
             foreach (var item in totalMatches)
             {
