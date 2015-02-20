@@ -137,7 +137,7 @@ public class ShapesManager : MonoBehaviour
         SetupSpawnPositions();
     }
 
-   
+
 
     private void InstantiateAndPlaceNewCandy(int row, int column, GameObject newCandy)
     {
@@ -322,7 +322,7 @@ public class ShapesManager : MonoBehaviour
             MoveAndAnimate(newCandyInfo.AlteredCandy, maxDistance);
             MoveAndAnimate(collapsedCandyInfo.AlteredCandy, maxDistance);
 
-            
+
 
             //will wait for both of the above animations
             yield return new WaitForSeconds(Constants.MoveAnimationMinDuration * maxDistance);
@@ -331,7 +331,7 @@ public class ShapesManager : MonoBehaviour
             totalMatches = shapes.GetMatches(collapsedCandyInfo.AlteredCandy).
                 Union(shapes.GetMatches(newCandyInfo.AlteredCandy)).Distinct();
 
-            
+
 
             timesRun++;
         }
@@ -515,10 +515,11 @@ public class ShapesManager : MonoBehaviour
     {
         yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
         potentialMatches = Utilities.GetPotentialMatches(shapes);
-        while (true)
+        if (potentialMatches != null)
         {
-            if (potentialMatches != null)
+            while (true)
             {
+
                 AnimatePotentialMatchesCoroutine = Utilities.AnimatePotentialMatches(potentialMatches);
                 StartCoroutine(AnimatePotentialMatchesCoroutine);
                 yield return new WaitForSeconds(Constants.WaitBeforePotentialMatchesCheck);
