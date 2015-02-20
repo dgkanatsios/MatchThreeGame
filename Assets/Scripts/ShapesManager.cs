@@ -196,8 +196,7 @@ public class ShapesManager : MonoBehaviour
                     hitGo = hit.collider.gameObject;
                     state = GameState.SelectionStarted;
                 }
-                //user clicked/touched the screen, no need to show him hints for a shortwhile
-                StopCheckForPotentialMatches();
+                
             }
         }
         else if (state == GameState.SelectionStarted)
@@ -205,10 +204,15 @@ public class ShapesManager : MonoBehaviour
             //user dragged
             if (Input.GetMouseButton(0))
             {
+                
+
                 var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                 //we have a hit
                 if (hit.collider != null && hitGo != hit.collider.gameObject)
                 {
+
+                    //user did a hit, no need to show him hints 
+                    StopCheckForPotentialMatches();
 
                     //if the two shapes are diagonally aligned (different row and column), just return
                     if (!Utilities.AreVerticalOrHorizontalNeighbors(hitGo.GetComponent<Shape>(),

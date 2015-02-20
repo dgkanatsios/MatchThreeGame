@@ -86,47 +86,51 @@ public static class Utilities
 
     public static List<GameObject> CheckHorizontal1(int row, int column, ShapesArray shapes)
     {
-        if (column <= Constants.Rows - 2)
+        if (column <= Constants.Columns - 2)
         {
-            if (row >= 1 && column >= 1)
-                if (shapes[row, column].GetComponent<Shape>().
-                IsSameType(shapes[row - 1, column - 1].GetComponent<Shape>()))
-                    return new List<GameObject>()
+            if (shapes[row, column].GetComponent<Shape>().
+                IsSameType(shapes[row, column + 1].GetComponent<Shape>()))
+            {
+                if (row >= 1 && column >= 1)
+                    if (shapes[row, column].GetComponent<Shape>().
+                    IsSameType(shapes[row - 1, column - 1].GetComponent<Shape>()))
+                        return new List<GameObject>()
                                 {
                                     shapes[row, column],
                                     shapes[row, column + 1],
                                     shapes[row - 1, column - 1]
                                 };
 
-            /* example *\
-             * * * * *
-             * * * * *
-             * * * * *
-             * & & * *
-             & * * * *
-            \* example  */
+                /* example *\
+                 * * * * *
+                 * * * * *
+                 * * * * *
+                 * & & * *
+                 & * * * *
+                \* example  */
 
-            if (row <= Constants.Rows - 2 && column >= 1)
-                if (shapes[row, column].GetComponent<Shape>().
-                IsSameType(shapes[row + 1, column - 1].GetComponent<Shape>()))
-                    return new List<GameObject>()
+                if (row <= Constants.Rows - 2 && column >= 1)
+                    if (shapes[row, column].GetComponent<Shape>().
+                    IsSameType(shapes[row + 1, column - 1].GetComponent<Shape>()))
+                        return new List<GameObject>()
                                 {
                                     shapes[row, column],
                                     shapes[row, column + 1],
                                     shapes[row + 1, column - 1]
                                 };
 
-            /* example *\
-             * * * * *
-             * * * * *
-             & * * * *
-             * & & * *
-             * * * * *
-            \* example  */
+                /* example *\
+                 * * * * *
+                 * * * * *
+                 & * * * *
+                 * & & * *
+                 * * * * *
+                \* example  */
+            }
         }
-
         return null;
     }
+
 
     public static List<GameObject> CheckHorizontal2(int row, int column, ShapesArray shapes)
     {
@@ -231,41 +235,45 @@ public static class Utilities
     {
         if (row <= Constants.Rows - 2)
         {
-            if (column >= 1 && row >= 1)
-                if (shapes[row, column].GetComponent<Shape>().
-                IsSameType(shapes[row - 1, column - 1].GetComponent<Shape>()))
-                    return new List<GameObject>()
+            if (shapes[row, column].GetComponent<Shape>().
+                IsSameType(shapes[row + 1, column].GetComponent<Shape>()))
+            {
+                if (column >= 1 && row >= 1)
+                    if (shapes[row, column].GetComponent<Shape>().
+                    IsSameType(shapes[row - 1, column - 1].GetComponent<Shape>()))
+                        return new List<GameObject>()
                                 {
                                     shapes[row, column],
                                     shapes[row + 1, column],
                                     shapes[row - 1, column -1]
                                 };
 
-            /* example *\
-              * * * * *
-              * * * * *
-              * & * * *
-              * & * * *
-              & * * * *
-            \* example  */
+                /* example *\
+                  * * * * *
+                  * * * * *
+                  * & * * *
+                  * & * * *
+                  & * * * *
+                \* example  */
 
-            if (column <= Constants.Columns - 2 && row >= 1)
-                if (shapes[row, column].GetComponent<Shape>().
-                IsSameType(shapes[row - 1, column + 1].GetComponent<Shape>()))
-                    return new List<GameObject>()
+                if (column <= Constants.Columns - 2 && row >= 1)
+                    if (shapes[row, column].GetComponent<Shape>().
+                    IsSameType(shapes[row - 1, column + 1].GetComponent<Shape>()))
+                        return new List<GameObject>()
                                 {
                                     shapes[row, column],
                                     shapes[row + 1, column],
                                     shapes[row - 1, column + 1]
                                 };
 
-            /* example *\
-              * * * * *
-              * * * * *
-              * & * * *
-              * & * * *
-              * * & * *
-            \* example  */
+                /* example *\
+                  * * * * *
+                  * * * * *
+                  * & * * *
+                  * & * * *
+                  * * & * *
+                \* example  */
+            }
         }
         return null;
     }

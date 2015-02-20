@@ -22,7 +22,15 @@ public class ShapesArray
     {
         get
         {
-            return shapes[row, column];
+            try
+            {
+                return shapes[row, column];
+            }
+            catch (Exception ex)
+            {
+                
+                throw;
+            }
         }
         set
         {
