@@ -276,14 +276,14 @@ public class ShapesManager : MonoBehaviour
 
         //if more than 3 matches and no Bonus is contained in the line, we will award a new Bonus
         bool addBonus = totalMatches.Count() >= Constants.MinimumMatchesForBonus &&
-            !BonusTypeUtilities.ContainsDestroyWholeRowColumn(hitGomatchesInfo.BonussContained) &&
-            !BonusTypeUtilities.ContainsDestroyWholeRowColumn(hitGo2matchesInfo.BonussContained);
+            !BonusTypeUtilities.ContainsDestroyWholeRowColumn(hitGomatchesInfo.BonusesContained) &&
+            !BonusTypeUtilities.ContainsDestroyWholeRowColumn(hitGo2matchesInfo.BonusesContained);
 
         Shape hitGoCache = null;
         if (addBonus)
         {
             hitGoCache = new Shape();
-            //get the moved game object that was of the same type
+            //get the game object that was of the same type
             var sameTypeGo = hitGomatchesInfo.MatchedCandy.Count() > 0 ? hitGo : hitGo2;
             var shape = sameTypeGo.GetComponent<Shape>();
             //cache it

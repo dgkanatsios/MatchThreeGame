@@ -52,7 +52,7 @@ public class ShapesArray
         var g1Shape = g1.GetComponent<Shape>();
         var g2Shape = g2.GetComponent<Shape>();
 
-        //backup array indexes
+        //get array indexes
         int g1Row = g1Shape.Row;
         int g1Column = g1Shape.Column;
         int g2Row = g2Shape.Row;
@@ -115,8 +115,8 @@ public class ShapesArray
         if (ContainsDestroyRowColumnBonus(horizontalMatches))
         {
             horizontalMatches = GetEntireRow(go);
-            if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonussContained))
-                matchesInfo.BonussContained |= BonusType.DestroyWholeRowColumn;
+            if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonusesContained))
+                matchesInfo.BonusesContained |= BonusType.DestroyWholeRowColumn;
         }
         matchesInfo.AddObjectRange(horizontalMatches);
 
@@ -124,8 +124,8 @@ public class ShapesArray
         if (ContainsDestroyRowColumnBonus(verticalMatches))
         {
             verticalMatches = GetEntireColumn(go);
-            if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonussContained))
-                matchesInfo.BonussContained |= BonusType.DestroyWholeRowColumn;
+            if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonusesContained))
+                matchesInfo.BonusesContained |= BonusType.DestroyWholeRowColumn;
         }
         matchesInfo.AddObjectRange(verticalMatches);
 
@@ -138,7 +138,8 @@ public class ShapesArray
         {
             foreach (var go in matches)
             {
-                if (BonusTypeUtilities.ContainsDestroyWholeRowColumn(go.GetComponent<Shape>().Bonus))
+                if (BonusTypeUtilities.ContainsDestroyWholeRowColumn
+                    (go.GetComponent<Shape>().Bonus))
                     return true;
             }
         }
@@ -290,7 +291,8 @@ public class ShapesArray
                             shapes[row2, column] = null;
 
                             //calculate the biggest distance
-                            if (row2 - row > collapseInfo.MaxDistance) collapseInfo.MaxDistance = row2 - row;
+                            if (row2 - row > collapseInfo.MaxDistance) 
+                                collapseInfo.MaxDistance = row2 - row;
 
                             //assign new row and column (name does not change)
                             shapes[row, column].GetComponent<Shape>().Row = row;
