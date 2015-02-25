@@ -217,11 +217,15 @@ public class ShapesManager : MonoBehaviour
                     //if the two shapes are diagonally aligned (different row and column), just return
                     if (!Utilities.AreVerticalOrHorizontalNeighbors(hitGo.GetComponent<Shape>(),
                         hit.collider.gameObject.GetComponent<Shape>()))
-                        return;
-
-                    state = GameState.Animating;
-                    FixSortingLayer(hitGo, hit.collider.gameObject);
-                    StartCoroutine(FindMatchesAndCollapse(hit));
+                    {
+                        state = GameState.None;
+                    }
+                    else
+                    {
+                        state = GameState.Animating;
+                        FixSortingLayer(hitGo, hit.collider.gameObject);
+                        StartCoroutine(FindMatchesAndCollapse(hit));
+                    }
                 }
             }
         }
