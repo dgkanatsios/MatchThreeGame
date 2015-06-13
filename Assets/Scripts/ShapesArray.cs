@@ -314,13 +314,13 @@ public class ShapesArray
     /// </summary>
     /// <param name="column"></param>
     /// <returns></returns>
-    public IEnumerable<Shape> GetEmptyItemsOnColumn(int column)
+    public IEnumerable<ShapeInfo> GetEmptyItemsOnColumn(int column)
     {
-        List<Shape> emptyItems = new List<Shape>();
+        List<ShapeInfo> emptyItems = new List<ShapeInfo>();
         for (int row = 0; row < Constants.Rows; row++)
         {
             if (shapes[row, column] == null)
-                emptyItems.Add(new Shape() { Row = row, Column = column });
+                emptyItems.Add(new ShapeInfo() { Row = row, Column = column });
         }
         return emptyItems;
     }
