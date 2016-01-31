@@ -286,13 +286,11 @@ public class ShapesManager : MonoBehaviour
         Shape hitGoCache = null;
         if (addBonus)
         {
-            hitGoCache = new Shape();
             //get the game object that was of the same type
             var sameTypeGo = hitGomatchesInfo.MatchedCandy.Count() > 0 ? hitGo : hitGo2;
-            var shape = sameTypeGo.GetComponent<Shape>();
-            //cache it
-            hitGoCache.Assign(shape.Type, shape.Row, shape.Column);
+            hitGoCache = sameTypeGo.GetComponent<Shape>();
         }
+
         int timesRun = 1;
         while (totalMatches.Count() >= Constants.MinimumMatches)
         {

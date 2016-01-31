@@ -29,7 +29,7 @@ public class ShapesArray
             catch (Exception ex)
             {
                 
-                throw;
+                throw ex;
             }
         }
         set
