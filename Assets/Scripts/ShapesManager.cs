@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine.UI;
 
 
@@ -257,8 +258,8 @@ public class ShapesManager : MonoBehaviour
         shapes.Swap(hitGo, hitGo2);
 
         //move the swapped ones
-        hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
-        hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
+        hitGo.transform.DOMove(hitGo2.transform.position, Constants.AnimationDuration);
+        hitGo2.transform.DOMove(hitGo.transform.position, Constants.AnimationDuration);
         yield return new WaitForSeconds(Constants.AnimationDuration);
 
         //get the matches via the helper methods
@@ -271,8 +272,8 @@ public class ShapesManager : MonoBehaviour
         //if user's swap didn't create at least a 3-match, undo their swap
         if (totalMatches.Count() < Constants.MinimumMatches)
         {
-            hitGo.transform.positionTo(Constants.AnimationDuration, hitGo2.transform.position);
-            hitGo2.transform.positionTo(Constants.AnimationDuration, hitGo.transform.position);
+            hitGo.transform.DOMove(hitGo2.transform.position, Constants.AnimationDuration);
+            hitGo2.transform.DOMove(hitGo.transform.position, Constants.AnimationDuration);
             yield return new WaitForSeconds(Constants.AnimationDuration);
 
             shapes.UndoSwap();
@@ -406,8 +407,11 @@ public class ShapesManager : MonoBehaviour
     {
         foreach (var item in movedGameObjects)
         {
-            item.transform.positionTo(Constants.MoveAnimationMinDuration * distance, BottomRight +
-                new Vector2(item.GetComponent<Shape>().Column * CandySize.x, item.GetComponent<Shape>().Row * CandySize.y));
+            item.transform.DOMove(
+                BottomRight + new Vector2(item.GetComponent<Shape>().Column * CandySize.x,
+                    item.GetComponent<Shape>().Row * CandySize.y),
+                Constants.MoveAnimationMinDuration * distance
+            );
         }
     }
 
