@@ -5,10 +5,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-
 public static class DebugUtilities
 {
-
     public static string[,] FillShapesArrayFromResourcesData()
     {
         string[,] shapes = new string[Constants.Rows, Constants.Columns];
@@ -25,8 +23,8 @@ public static class DebugUtilities
                 shapes[row, column] = items[column];
             }
         }
-        return shapes;
 
+        return shapes;
     }
 
     public static void DebugRotate(GameObject go)
@@ -43,18 +41,15 @@ public static class DebugUtilities
 
     public static void DebugPositions(GameObject hitGo, GameObject hitGo2)
     {
-        string lala =
-                        hitGo.GetComponent<Shape>().Row + "-"
+        string lala = hitGo.GetComponent<Shape>().Row + "-"
                         + hitGo.GetComponent<Shape>().Column + "-"
                          + hitGo2.GetComponent<Shape>().Row + "-"
                          + hitGo2.GetComponent<Shape>().Column;
         Debug.Log(lala);
-
     }
 
     public static void ShowArray(ShapesArray shapes)
     {
-
         Debug.Log(GetArrayContents(shapes));
     }
 

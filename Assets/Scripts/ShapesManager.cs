@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine.UI;
 
-
 public class ShapesManager : MonoBehaviour
 {
     public Text DebugText, ScoreText;
@@ -32,6 +31,7 @@ public class ShapesManager : MonoBehaviour
     IEnumerable<GameObject> potentialMatches;
 
     public SoundManager soundManager;
+
     void Awake()
     {
         DebugText.enabled = ShowDebugInfo;
@@ -89,13 +89,11 @@ public class ShapesManager : MonoBehaviour
                 newCandy = GetSpecificCandyOrBonusForPremadeLevel(premadeLevel[row, column]);
 
                 InstantiateAndPlaceNewCandy(row, column, newCandy);
-
             }
         }
 
         SetupSpawnPositions();
     }
-
 
     public void InitializeCandyAndSpawnPositions()
     {
@@ -111,7 +109,6 @@ public class ShapesManager : MonoBehaviour
         {
             for (int column = 0; column < Constants.Columns; column++)
             {
-
                 GameObject newCandy = GetRandomCandy();
 
                 //check if two previous horizontal are of the same type
@@ -131,14 +128,11 @@ public class ShapesManager : MonoBehaviour
                 }
 
                 InstantiateAndPlaceNewCandy(row, column, newCandy);
-
             }
         }
 
         SetupSpawnPositions();
     }
-
-
 
     private void InstantiateAndPlaceNewCandy(int row, int column, GameObject newCandy)
     {
@@ -161,9 +155,6 @@ public class ShapesManager : MonoBehaviour
         }
     }
 
-
-
-
     /// <summary>
     /// Destroy all candy gameobjects
     /// </summary>
@@ -177,7 +168,6 @@ public class ShapesManager : MonoBehaviour
             }
         }
     }
-
 
     // Update is called once per frame
     void Update()
@@ -205,8 +195,6 @@ public class ShapesManager : MonoBehaviour
             //user dragged
             if (Input.GetMouseButton(0))
             {
-                
-
                 var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                 //we have a hit
                 if (hit.collider != null && hitGo != hit.collider.gameObject)
@@ -247,9 +235,6 @@ public class ShapesManager : MonoBehaviour
             sp2.sortingOrder = 0;
         }
     }
-
-
-
 
     private IEnumerator FindMatchesAndCollapse(RaycastHit2D hit2)
     {
@@ -329,16 +314,12 @@ public class ShapesManager : MonoBehaviour
             MoveAndAnimate(newCandyInfo.AlteredCandy, maxDistance);
             MoveAndAnimate(collapsedCandyInfo.AlteredCandy, maxDistance);
 
-
-
             //will wait for both of the above animations
             yield return new WaitForSeconds(Constants.MoveAnimationMinDuration * maxDistance);
 
             //search if there are matches with the new/collapsed items
             totalMatches = shapes.GetMatches(collapsedCandyInfo.AlteredCandy).
                 Union(shapes.GetMatches(newCandyInfo.AlteredCandy)).Distinct();
-
-
 
             timesRun++;
         }
@@ -364,9 +345,6 @@ public class ShapesManager : MonoBehaviour
         //add the proper Bonus type
         BonusShape.Bonus |= BonusType.DestroyWholeRowColumn;
     }
-
-
-
 
     /// <summary>
     /// Spawns new candy in columns that have missing ones

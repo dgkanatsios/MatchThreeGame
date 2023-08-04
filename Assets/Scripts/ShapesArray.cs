@@ -28,7 +28,6 @@ public class ShapesArray
             }
             catch (Exception ex)
             {
-                
                 throw ex;
             }
         }
@@ -81,9 +80,6 @@ public class ShapesArray
 
     private GameObject backupG1;
     private GameObject backupG2;
-
-
-   
 
     /// <summary>
     /// Returns the matches found for a list of GameObjects
