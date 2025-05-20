@@ -65,6 +65,8 @@ public class ShapesManager : MonoBehaviour
             item.GetComponent<Shape>().Type = CandyPrefabs.
                 Where(x => x.GetComponent<Shape>().Type.Contains(item.name.Split('_')[1].Trim())).Single().name;
         }
+
+        ShuffleItemUsageCountText.text = "洗牌道具: " + shuffleItemUsageCount.ToString();
     }
 
     public void InitializeCandyAndSpawnPositionsFromPremadeLevel()
@@ -197,7 +199,7 @@ public class ShapesManager : MonoBehaviour
                     hitGo = hit.collider.gameObject;
                     state = GameState.SelectionStarted;
                 }
-                
+
             }
         }
         else if (state == GameState.SelectionStarted)
@@ -205,7 +207,7 @@ public class ShapesManager : MonoBehaviour
             //user dragged
             if (Input.GetMouseButton(0))
             {
-                
+
 
                 var hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                 //we have a hit
@@ -567,6 +569,161 @@ public class ShapesManager : MonoBehaviour
         throw new System.Exception("Wrong type, check your premade level");
     }
 
+    // 新增洗牌道具的引用
+    public GameObject ShuffleItemPrefab;
+    private int shuffleItemUsageCount = 3;
+    public Text ShuffleItemUsageCountText;
 
+    // 处理洗牌道具的使用
+    public void OnShuffleItemUsed()
+    {
+        ShuffleCandies();
+    }
+
+    // 新增洗牌方法
+    private void ShuffleCandies()
+    {
+        if (shuffleItemUsageCount > 0)
+        {
+            // 记录所有糖果的位置和类型
+            List<Shape> allShapes = new List<Shape>();
+            for (int row = 0; row < Constants.Rows; row++)
+            {
+                for (int column = 0; column < Constants.Columns; column++)
+                {
+                    GameObject candy = shapes[row, column];
+                    if (candy != null)
+                    {
+                        Shape shape = candy.GetComponent<Shape>();
+                        allShapes.Add(shape);
+                    }
+                }
+            }
+
+            // 清空游戏板
+            for (int row = 0; row < Constants.Rows; row++)
+            {
+                for (int column = 0; column < Constants.Columns; column++)
+                {
+                    GameObject candy = shapes[row, column];
+                    if (candy != null)
+                    {
+                        // 停止与该对象关联的所有动画
+                        candy.transform.DOKill();
+                        Destroy(candy);
+                        shapes[row, column] = null;
+                    }
+                }
+            }
+
+            // 打乱糖果列表
+            System.Random random = new System.Random();
+            allShapes = allShapes.OrderBy(x => random.Next()).ToList();
+
+            // 重新放置糖果
+            int index = 0;
+            for (int row = 0; row < Constants.Rows; row++)
+            {
+                for (int column = 0; column < Constants.Columns; column++)
+                {
+                    if (index < allShapes.Count)
+                    {
+                        Shape shape = allShapes[index];
+                        GameObject newCandy = Instantiate(shape.gameObject,
+                            BottomRight + new Vector2(column * CandySize.x, row * CandySize.y), Quaternion.identity);
+                        newCandy.GetComponent<Shape>().Assign(shape.Type, row, column);
+                        shapes[row, column] = newCandy;
+
+                        // 确保碰撞体激活
+                        Collider2D collider = newCandy.GetComponent<Collider2D>();
+                        if (collider != null)
+                        {
+                            collider.enabled = true;
+                        }
+
+                        index++;
+                    }
+                }
+            }
+
+            StartCoroutine(ProcessMatchesAfterShuffle());
+
+            shuffleItemUsageCount--;
+            UpdateShuffleItemUsageCountUI();
+        }
+        else
+        {
+            Debug.Log("洗牌道具已用完");
+        }
+    }
+
+    private IEnumerator ProcessMatchesAfterShuffle()
+    {
+        IEnumerable<GameObject> totalMatches;
+        do
+        {
+            // 获取所有糖果
+            List<GameObject> allCandies = new List<GameObject>();
+            for (int row = 0; row < Constants.Rows; row++)
+            {
+                for (int column = 0; column < Constants.Columns; column++)
+                {
+                    GameObject candy = shapes[row, column];
+                    if (candy != null)
+                    {
+                        allCandies.Add(candy);
+                    }
+                }
+            }
+
+            // 检查匹配
+            totalMatches = shapes.GetMatches(allCandies);
+
+            if (totalMatches.Count() >= Constants.MinimumMatches)
+            {
+                // 增加分数
+                IncreaseScore((totalMatches.Count() - 2) * Constants.Match3Score);
+                soundManager.PlayCrincle();
+
+                // 消除匹配的糖果
+                foreach (var item in totalMatches)
+                {
+                    shapes.Remove(item);
+                    RemoveFromScene(item);
+                }
+
+                // 获取需要处理的列
+                var columns = totalMatches.Select(go => go.GetComponent<Shape>().Column).Distinct();
+
+                // 合并消除后的空位
+                var collapsedCandyInfo = shapes.Collapse(columns);
+                // 创建新的糖果
+                var newCandyInfo = CreateNewCandyInSpecificColumns(columns);
+
+                int maxDistance = Mathf.Max(collapsedCandyInfo.MaxDistance, newCandyInfo.MaxDistance);
+
+                MoveAndAnimate(newCandyInfo.AlteredCandy, maxDistance);
+                MoveAndAnimate(collapsedCandyInfo.AlteredCandy, maxDistance);
+
+                // 等待动画完成
+                yield return new WaitForSeconds(Constants.MoveAnimationMinDuration * maxDistance);
+            }
+        } while (totalMatches.Count() >= Constants.MinimumMatches);
+
+        // 检查潜在匹配
+        StartCheckForPotentialMatches();
+    }
+
+    // 更新洗牌道具使用次数的 UI 显示
+    private void UpdateShuffleItemUsageCountUI()
+    {
+        // 假设你有一个 Text 组件用于显示使用次数
+        // 你需要在 Inspector 中关联这个 Text 组件
+        // 这里只是示例，你需要根据实际情况修改
+        if (ShuffleItemUsageCountText != null)
+        {
+            ShuffleItemUsageCountText.text = "洗牌道具: " + shuffleItemUsageCount.ToString();
+        }
+    }
 
 }
